@@ -59,13 +59,13 @@ export const FeedList: React.FC<FeedListProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full w-full md:w-80 lg:w-96 bg-gray-900 border-r border-gray-800 flex-shrink-0">
+    <div className="flex flex-col h-full w-full md:w-80 lg:w-96 bg-gray-900 border-r border-gray-800 transition-all">
       {/* Header */}
-      <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-gray-850 sticky top-0 z-10">
-        <h2 className="font-semibold text-gray-200 truncate">{selectedFeed.name}</h2>
+      <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-gray-850 sticky top-0 z-10 shrink-0">
+        <h2 className="font-semibold text-gray-200 truncate pr-2">{selectedFeed.name}</h2>
         <button 
           onClick={onRefresh} 
-          className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+          className="p-2 hover:bg-gray-700 rounded-full transition-colors shrink-0"
           title="Refresh Feed"
         >
           {isLoading && articles.length === 0 ? (
@@ -144,7 +144,7 @@ export const FeedList: React.FC<FeedListProps> = ({
       </div>
       
        {/* Footer status */}
-       <div className="h-8 border-t border-gray-800 bg-gray-900 flex items-center px-4 text-[10px] text-gray-600 justify-between">
+       <div className="h-8 border-t border-gray-800 bg-gray-900 flex items-center px-4 text-[10px] text-gray-600 justify-between shrink-0">
          <span>Updated: {lastUpdated > 0 ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}</span>
          <span>{articles.length} items</span>
        </div>

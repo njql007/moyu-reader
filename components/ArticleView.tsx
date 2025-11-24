@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Article } from '../types';
 import { fetchFullArticle, fetchWebPage } from '../services/rssService';
-import { ExternalLink, BookOpen, Globe, MonitorPlay, Loader2, Globe as GlobeIcon } from 'lucide-react';
+import { ExternalLink, BookOpen, Globe, MonitorPlay, Loader2, Globe as GlobeIcon, ArrowLeft } from 'lucide-react';
 
 interface ArticleViewProps {
   article: Article | null;
+  onBack?: () => void;
 }
 
 type TabMode = 'READER' | 'WEB';
 
-export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
+export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => {
   const [activeTab, setActiveTab] = useState<TabMode>('READER');
   
   // Content states
@@ -99,22 +100,35 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
     <div className="flex-1 flex flex-col bg-gray-950 h-full overflow-hidden relative">
       {/* Toolbar */}
       <div className="h-14 border-b border-gray-800 bg-gray-900/95 backdrop-blur flex items-center justify-between px-4 md:px-6 sticky top-0 z-30 shrink-0">
-        <div className="flex bg-gray-950 rounded-lg p-1 border border-gray-800">
-            <button
-                onClick={() => setActiveTab('READER')}
-                className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === 'READER' ? 'bg-gray-800 text-white shadow-sm ring-1 ring-gray-700' : 'text-gray-500 hover:text-gray-300'}`}
-            >
-                <BookOpen className="w-3.5 h-3.5 mr-2" />
-                Smart Reader
-            </button>
-            <button
-                onClick={() => setActiveTab('WEB')}
-                className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === 'WEB' ? 'bg-blue-900/30 text-blue-200 shadow-sm ring-1 ring-blue-500/50' : 'text-gray-500 hover:text-blue-400'}`}
-                title="View original webpage"
-            >
-                <Globe className="w-3.5 h-3.5 mr-2" />
-                Original Web
-            </button>
+        <div className="flex items-center gap-2">
+            {/* Mobile Back Button */}
+            {onBack && (
+                <button 
+                    onClick={onBack}
+                    className="md:hidden mr-1 p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-full transition-colors"
+                    title="Back to list"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                </button>
+            )}
+
+            <div className="flex bg-gray-950 rounded-lg p-1 border border-gray-800">
+                <button
+                    onClick={() => setActiveTab('READER')}
+                    className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === 'READER' ? 'bg-gray-800 text-white shadow-sm ring-1 ring-gray-700' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                    <BookOpen className="w-3.5 h-3.5 mr-2" />
+                    Reader
+                </button>
+                <button
+                    onClick={() => setActiveTab('WEB')}
+                    className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === 'WEB' ? 'bg-blue-900/30 text-blue-200 shadow-sm ring-1 ring-blue-500/50' : 'text-gray-500 hover:text-blue-400'}`}
+                    title="View original webpage"
+                >
+                    <Globe className="w-3.5 h-3.5 mr-2" />
+                    Web
+                </button>
+            </div>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -186,14 +200,14 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
       {/* READER View (HTML / Markdown) */}
       {activeTab === 'READER' && (
       <div ref={contentRef} className="flex-1 overflow-y-auto bg-gray-950 scroll-smooth custom-scrollbar">
-        <div className="max-w-3xl mx-auto px-6 py-8 md:py-12">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12">
           
           {/* Article Header */}
           <header className="mb-8 border-b border-gray-800/50 pb-8">
-            <h1 className="text-2xl md:text-4xl font-bold text-gray-100 leading-tight mb-4 font-display">
+            <h1 className="text-xl md:text-3xl font-bold text-gray-100 leading-tight mb-4 font-display">
                 {article.title}
             </h1>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 font-mono">
+            <div className="flex flex-wrap items-center gap-4 text-xs md:text-sm text-gray-500 font-mono">
                 <span className="flex items-center text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">
                     {article.author || 'Unknown'}
                 </span>

@@ -127,28 +127,41 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen w-screen bg-black text-gray-100 overflow-hidden font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
       {/* 1. Sidebar */}
-      <Sidebar 
-        selectedFeedId={selectedFeed?.id || null} 
-        onSelectFeed={handleFeedSelect} 
-      />
+      {/* Hidden on Mobile when Article is selected */}
+      <div className={`${selectedArticle ? 'hidden md:block' : 'block'} flex-shrink-0 h-full`}>
+        <Sidebar 
+            selectedFeedId={selectedFeed?.id || null} 
+            onSelectFeed={handleFeedSelect} 
+        />
+      </div>
 
       {/* 2. Feed List */}
-      <FeedList 
-        selectedFeed={selectedFeed}
-        articles={currentFeedState?.articles || []}
-        isLoading={currentFeedState?.isLoading || false}
-        onSelectArticle={handleArticleSelect}
-        selectedArticleId={selectedArticle?.guid}
-        onRefresh={handleRefresh}
-        onLoadMore={handleLoadMore}
-        lastUpdated={currentFeedState?.lastUpdated || 0}
-        hasMore={currentFeedState?.hasMore ?? false}
-      />
+      {/* Hidden on Mobile when Article is selected */}
+      {/* Adjusted layout: flex-1 on mobile allows it to fill remaining space next to sidebar without overflow */}
+      <div className={`${selectedArticle ? 'hidden md:flex' : 'flex'} h-full z-10 flex-1 md:flex-none md:w-auto min-w-0`}>
+        <FeedList 
+            selectedFeed={selectedFeed}
+            articles={currentFeedState?.articles || []}
+            isLoading={currentFeedState?.isLoading || false}
+            onSelectArticle={handleArticleSelect}
+            selectedArticleId={selectedArticle?.guid}
+            onRefresh={handleRefresh}
+            onLoadMore={handleLoadMore}
+            lastUpdated={currentFeedState?.lastUpdated || 0}
+            hasMore={currentFeedState?.hasMore ?? false}
+        />
+      </div>
 
       {/* 3. Article View */}
-      <ArticleView article={selectedArticle} />
+      {/* Hidden on Mobile when NO Article is selected */}
+      <div className={`${!selectedArticle ? 'hidden md:flex' : 'flex'} flex-1 flex-col h-full overflow-hidden w-full`}>
+        <ArticleView 
+            article={selectedArticle} 
+            onBack={() => setSelectedArticle(null)}
+        />
+      </div>
       
-      {/* Error Toast - Only show if there is an explicit error message (usually Page 1 failures) */}
+      {/* Error Toast */}
       {currentFeedState?.error && (
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-red-950/90 text-red-200 px-6 py-3 rounded-full text-sm shadow-2xl z-50 border border-red-800/50 backdrop-blur flex items-center gap-3 animate-in slide-in-from-bottom-5 fade-in duration-300">
            <AlertCircle className="w-4 h-4" />
