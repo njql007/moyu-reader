@@ -13,11 +13,25 @@ export const FEEDS: RSSFeed[] = [
     icon: '⚡'
   },
   {
-    id: '36kr',
-    name: '36Kr',
-    url: 'https://36kr.com/feed',
+    id: 'ithome',
+    name: 'IT之家',
+    url: 'https://www.ithome.com/rss/',
     category: 'tech',
-    icon: '🚀'
+    icon: '🏠'
+  },
+  {
+    id: 'landian',
+    name: '蓝点网',
+    url: 'https://www.landiannews.com/feed',
+    category: 'tech',
+    icon: '🔷'
+  },
+  {
+    id: 'ifanr',
+    name: '爱范儿',
+    url: 'https://www.ifanr.com/feed',
+    category: 'tech',
+    icon: '🍦'
   },
   {
     id: 'sspai',

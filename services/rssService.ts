@@ -133,6 +133,21 @@ const FEED_PAGINATION_OVERRIDES: Record<string, PaginationConfig> = {
         mode: 'HTML_SCRAPE',
         htmlSelector: '.item_title > a'
     },
+    'ithome': {
+        urlGenerator: (page) => `https://www.ithome.com/list/list_${page}.html`,
+        mode: 'HTML_SCRAPE',
+        htmlSelector: '.list_1 li .block h2 a'
+    },
+    'landian': {
+        urlGenerator: (page) => `https://www.landiannews.com/page/${page}`,
+        mode: 'HTML_SCRAPE',
+        htmlSelector: '.article-title a, header h2 a, .post-title a'
+    },
+    'ifanr': {
+        urlGenerator: (page) => `https://www.ifanr.com/page/${page}`,
+        mode: 'HTML_SCRAPE',
+        htmlSelector: '.article-item h3 a, .article-info h3 a'
+    },
     'sspai': {
         urlGenerator: (page) => `https://sspai.com/api/v1/article/index/page/get?limit=20&offset=${(page - 1) * 20}`,
         mode: 'JSON_API',
@@ -147,26 +162,6 @@ const FEED_PAGINATION_OVERRIDES: Record<string, PaginationConfig> = {
                 contentSnippet: item.summary,
                 content: processHtmlContent(item.body || '', 'https://sspai.com') // Process API content immediately
             }));
-        }
-    },
-    '36kr': {
-        urlGenerator: (page) => `https://36kr.com/pp/api/aggregation-entity?type=web_news&per_page=20&page=${page}`,
-        mode: 'JSON_API',
-        jsonParser: (json: any) => {
-            if (!json || !json.data || !json.data.items) return [];
-            return json.data.items.map((wrapper: any) => {
-                const item = wrapper.post;
-                if (!item) return null;
-                return {
-                    guid: item.id.toString(),
-                    title: item.title,
-                    link: `https://36kr.com/p/${item.id}`,
-                    pubDate: item.published_at,
-                    author: item.user?.name || '36Kr',
-                    contentSnippet: item.summary,
-                    content: ''
-                };
-            }).filter((i: any) => i !== null);
         }
     }
 };
@@ -422,7 +417,9 @@ export const fetchFullArticle = async (url: string): Promise<string | null> => {
         '.post_content',
         '#art_content', 
         '.article-cont', 
-        '.content' 
+        '.content',
+        '.article-detail', // ITHome often uses this
+        '.news_content' // Solidot
     ];
     
     for (const cls of contentClasses) {
