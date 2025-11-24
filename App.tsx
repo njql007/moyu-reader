@@ -5,7 +5,7 @@ import { ArticleView } from './components/ArticleView';
 import { RSSFeed, Article, FeedState } from './types';
 import { FEEDS } from './constants';
 import { fetchRSSFeed } from './services/rssService';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 const App: React.FC = () => {
   const [selectedFeed, setSelectedFeed] = useState<RSSFeed | null>(FEEDS[0]); 
@@ -13,12 +13,12 @@ const App: React.FC = () => {
   
   const [feedCache, setFeedCache] = useState<Record<string, FeedState>>({});
 
-  const loadFeed = useCallback(async (feed: RSSFeed, forceRefresh = false) => {
+  const loadFeed = useCallback(async (feed: RSSFeed, forceRefresh = false, pageToLoad = 1) => {
     const now = Date.now();
     const existing = feedCache[feed.id];
     
-    // Cache validity: 5 minutes
-    if (!forceRefresh && existing && existing.articles.length > 0 && (now - existing.lastUpdated < 300000)) {
+    // Cache validity logic only for page 1.
+    if (pageToLoad === 1 && !forceRefresh && existing && existing.articles.length > 0 && (now - existing.lastUpdated < 300000)) {
       return;
     }
 
@@ -27,38 +27,69 @@ const App: React.FC = () => {
       [feed.id]: {
         articles: prev[feed.id]?.articles || [],
         isLoading: true,
-        error: null,
-        lastUpdated: prev[feed.id]?.lastUpdated || 0
+        error: null, // Reset error on new load
+        lastUpdated: prev[feed.id]?.lastUpdated || 0,
+        page: pageToLoad,
+        hasMore: prev[feed.id]?.hasMore ?? true 
       }
     }));
 
     try {
-      const articles = await fetchRSSFeed(feed.url);
-      setFeedCache(prev => ({
-        ...prev,
-        [feed.id]: {
-          articles,
-          isLoading: false,
-          error: null,
-          lastUpdated: Date.now()
-        }
-      }));
+      const fetchedArticles = await fetchRSSFeed(feed, pageToLoad);
+      
+      setFeedCache(prev => {
+        const current = prev[feed.id];
+        // If it's page 1, replace. If page > 1, append.
+        const currentArticles = pageToLoad === 1 ? [] : (current.articles || []);
+        
+        // Deduplication
+        const existingGuids = new Set(currentArticles.map(a => a.guid));
+        const newArticles = fetchedArticles.filter(a => !existingGuids.has(a.guid));
+        
+        // If we got 0 new articles (either empty response or all duplicates), we stop pagination.
+        const hasMore = newArticles.length > 0 && fetchedArticles.length > 0;
+
+        return {
+          ...prev,
+          [feed.id]: {
+            articles: [...currentArticles, ...newArticles],
+            isLoading: false,
+            error: null,
+            lastUpdated: Date.now(),
+            page: pageToLoad,
+            hasMore: hasMore
+          }
+        };
+      });
     } catch (error: any) {
-      console.error(error);
-      setFeedCache(prev => ({
-        ...prev,
-        [feed.id]: {
-          ...prev[feed.id],
-          isLoading: false,
-          error: error.message || "Failed to load feed"
-        }
-      }));
+      console.error("LoadFeed Error:", error);
+      
+      setFeedCache(prev => {
+         // If error happens on Page 1, it's a critical feed error.
+         // If error happens on Page > 1, it's just "end of stream" or "hiccup", so we just stop loading.
+         const isPaginationError = pageToLoad > 1;
+         
+         return {
+            ...prev,
+            [feed.id]: {
+                ...prev[feed.id],
+                isLoading: false,
+                // Only set the error message if it's the first page.
+                // For pagination, we silence the error and just stop "hasMore".
+                error: isPaginationError ? null : (error.message || "Failed to load feed"),
+                hasMore: isPaginationError ? false : prev[feed.id].hasMore
+            }
+         };
+      });
     }
   }, [feedCache]);
 
   useEffect(() => {
     if (selectedFeed) {
-      loadFeed(selectedFeed);
+      // If never loaded, load page 1
+      if (!feedCache[selectedFeed.id]) {
+          loadFeed(selectedFeed, false, 1);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
@@ -66,7 +97,9 @@ const App: React.FC = () => {
   const handleFeedSelect = (feed: RSSFeed) => {
     setSelectedFeed(feed);
     setSelectedArticle(null);
-    loadFeed(feed);
+    if (!feedCache[feed.id]) {
+        loadFeed(feed, false, 1);
+    }
   };
 
   const handleArticleSelect = (article: Article) => {
@@ -75,11 +108,21 @@ const App: React.FC = () => {
 
   const handleRefresh = () => {
     if (selectedFeed) {
-      loadFeed(selectedFeed, true);
+      loadFeed(selectedFeed, true, 1);
     }
   };
 
-  const currentFeedState = selectedFeed ? feedCache[selectedFeed.id] || { articles: [], isLoading: true, error: null, lastUpdated: 0 } : null;
+  const handleLoadMore = () => {
+      if (selectedFeed) {
+          const currentState = feedCache[selectedFeed.id];
+          // Prevent double loading
+          if (!currentState.isLoading && currentState.hasMore) {
+              loadFeed(selectedFeed, false, currentState.page + 1);
+          }
+      }
+  };
+
+  const currentFeedState = selectedFeed ? feedCache[selectedFeed.id] || { articles: [], isLoading: true, error: null, lastUpdated: 0, page: 1, hasMore: true } : null;
 
   return (
     <div className="flex h-screen w-screen bg-black text-gray-100 overflow-hidden font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
@@ -97,13 +140,15 @@ const App: React.FC = () => {
         onSelectArticle={handleArticleSelect}
         selectedArticleId={selectedArticle?.guid}
         onRefresh={handleRefresh}
+        onLoadMore={handleLoadMore}
         lastUpdated={currentFeedState?.lastUpdated || 0}
+        hasMore={currentFeedState?.hasMore ?? false}
       />
 
       {/* 3. Article View */}
       <ArticleView article={selectedArticle} />
       
-      {/* Error Toast */}
+      {/* Error Toast - Only show if there is an explicit error message (usually Page 1 failures) */}
       {currentFeedState?.error && (
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-red-950/90 text-red-200 px-6 py-3 rounded-full text-sm shadow-2xl z-50 border border-red-800/50 backdrop-blur flex items-center gap-3 animate-in slide-in-from-bottom-5 fade-in duration-300">
            <AlertCircle className="w-4 h-4" />

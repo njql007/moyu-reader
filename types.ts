@@ -22,4 +22,6 @@ export interface FeedState {
   isLoading: boolean;
   error: string | null;
   lastUpdated: number;
+  page: number;
+  hasMore: boolean;
 }

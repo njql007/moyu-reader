@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Article, RSSFeed } from '../types';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, ChevronDown } from 'lucide-react';
 
 interface FeedListProps {
   selectedFeed: RSSFeed | null;
@@ -9,7 +9,9 @@ interface FeedListProps {
   onSelectArticle: (article: Article) => void;
   selectedArticleId?: string;
   onRefresh: () => void;
+  onLoadMore: () => void;
   lastUpdated: number;
+  hasMore: boolean;
 }
 
 export const FeedList: React.FC<FeedListProps> = ({ 
@@ -19,8 +21,35 @@ export const FeedList: React.FC<FeedListProps> = ({
   onSelectArticle, 
   selectedArticleId,
   onRefresh,
-  lastUpdated
+  onLoadMore,
+  lastUpdated,
+  hasMore
 }) => {
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && hasMore && !isLoading) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasMore, isLoading, onLoadMore]);
+
   if (!selectedFeed) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-500 bg-gray-900 border-r border-gray-800 h-full">
@@ -39,7 +68,7 @@ export const FeedList: React.FC<FeedListProps> = ({
           className="p-2 hover:bg-gray-700 rounded-full transition-colors"
           title="Refresh Feed"
         >
-          {isLoading ? (
+          {isLoading && articles.length === 0 ? (
             <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
           ) : (
             <RefreshCw className="w-4 h-4 text-gray-400" />
@@ -59,7 +88,7 @@ export const FeedList: React.FC<FeedListProps> = ({
             ))}
           </div>
         ) : (
-          <ul>
+          <ul className="pb-4">
             {articles.map((article) => {
                 const isSelected = selectedArticleId === article.guid;
                 const date = new Date(article.pubDate);
@@ -92,11 +121,32 @@ export const FeedList: React.FC<FeedListProps> = ({
             No articles found.
           </div>
         )}
+
+        {/* Infinite Scroll Loader */}
+        {articles.length > 0 && hasMore && (
+           <div ref={loadMoreRef} className="p-4 flex justify-center items-center text-gray-500 text-xs">
+              {isLoading ? (
+                  <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Loading more...
+                  </>
+              ) : (
+                  <span className="opacity-0">Load More trigger</span>
+              )}
+           </div>
+        )}
+        
+        {articles.length > 0 && !hasMore && (
+            <div className="p-6 text-center text-gray-600 text-xs border-t border-gray-800/50">
+                End of content
+            </div>
+        )}
       </div>
       
        {/* Footer status */}
-       <div className="h-8 border-t border-gray-800 bg-gray-900 flex items-center px-4 text-[10px] text-gray-600">
-         Updated: {lastUpdated > 0 ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}
+       <div className="h-8 border-t border-gray-800 bg-gray-900 flex items-center px-4 text-[10px] text-gray-600 justify-between">
+         <span>Updated: {lastUpdated > 0 ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}</span>
+         <span>{articles.length} items</span>
        </div>
     </div>
   );

@@ -1,32 +1,308 @@
-import { CORS_PROXY } from '../constants';
-import { Article } from '../types';
+import { Article, RSSFeed } from '../types';
 
-// Helper to fetch raw text via proxy
-const fetchProxyText = async (url: string): Promise<string | null> => {
-    try {
-        const targetUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
-        const response = await fetch(targetUrl);
-        if (!response.ok) {
-            throw new Error(`Network response was not ok: ${response.status}`);
+// Proxy Fallback List
+// Added more robust proxies (CodeTabs, ThingProxy) to handle strict sites like The Verge
+const PROXY_PROVIDERS = [
+    (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    (url: string) => `https://thingproxy.freeboard.io/fetch/${url}`
+];
+
+// Helper to fetch raw text via proxy with fallback
+const fetchProxyText = async (targetUrl: string): Promise<string | null> => {
+    // Some sites (like The Verge) might block requests with unknown query params (cache busters).
+    // We only add cache busters for sites we know tolerate them or need them (like CnBeta).
+    const isStrictDomain = targetUrl.includes('theverge.com');
+    
+    let urlToFetch = targetUrl;
+    if (!isStrictDomain) {
+        const separator = targetUrl.includes('?') ? '&' : '?';
+        urlToFetch = `${targetUrl}${separator}_cb=${Date.now()}`;
+    }
+
+    for (const generateProxyUrl of PROXY_PROVIDERS) {
+        try {
+            const proxyUrl = generateProxyUrl(urlToFetch);
+            const response = await fetch(proxyUrl);
+            
+            if (response.status === 404) {
+                console.warn(`[Proxy] 404 Not Found for: ${targetUrl}`);
+                // If 404, the resource is likely actually gone, don't try other proxies for this specific URL
+                return null;
+            }
+
+            if (!response.ok) {
+                console.warn(`[Proxy] Failed with ${response.status} via ${proxyUrl}, trying next...`);
+                continue; 
+            }
+            
+            return await response.text();
+        } catch (error) {
+            console.warn(`[Proxy] Network error via proxy, trying next...`, error);
+            continue;
         }
-        return await response.text();
-    } catch (error) {
-        console.error("Proxy fetch failed:", error);
-        return null;
+    }
+    console.error(`[Proxy] All proxies failed for ${targetUrl}`);
+    return null;
+};
+
+// --- Content Processing Helper ---
+// Centralized logic to fix lazy images and clean content
+const processHtmlContent = (html: string, baseUrlStr: string): string => {
+    if (!html) return "";
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const baseUrl = new URL(baseUrlStr);
+
+        // Fix Lazy Loading Images (Crucial for sites like SSPai)
+        // SSPai uses 'data-original', others use 'data-src'
+        doc.querySelectorAll('img').forEach(img => {
+            const lazySrc = img.getAttribute('data-original') || 
+                            img.getAttribute('data-src') || 
+                            img.getAttribute('data-url') ||
+                            img.getAttribute('lazy-src');
+            
+            if (lazySrc) {
+                let validSrc = lazySrc;
+                // Fix relative paths in lazy attributes
+                if (!validSrc.startsWith('http') && !validSrc.startsWith('data:')) {
+                    try {
+                        validSrc = new URL(validSrc, baseUrl.origin).href;
+                    } catch(e) {}
+                }
+                
+                img.setAttribute('src', validSrc);
+                img.removeAttribute('srcset'); // Remove srcset to avoid browser confusion
+                img.style.display = 'block'; 
+                img.style.opacity = '1';
+                img.style.maxWidth = '100%';
+                img.style.height = 'auto';
+            } else {
+                // Fix standard src relative paths
+                const src = img.getAttribute('src');
+                if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+                     try {
+                        img.setAttribute('src', new URL(src, baseUrl.origin).href);
+                    } catch(e) {}
+                }
+            }
+        });
+
+        // Fix Links
+        doc.querySelectorAll('a').forEach(a => {
+            const href = a.getAttribute('href');
+            if (href && !href.startsWith('http') && !href.startsWith('#')) {
+                 try {
+                    a.setAttribute('href', new URL(href, baseUrl.origin).href);
+                } catch(e) {}
+            }
+            a.setAttribute('target', '_blank');
+            a.setAttribute('rel', 'noopener noreferrer');
+        });
+
+        return doc.body.innerHTML;
+    } catch (e) {
+        console.error("Error processing HTML content", e);
+        return html;
     }
 };
 
-export const fetchRSSFeed = async (feedUrl: string): Promise<Article[]> => {
+// --- Custom Pagination Strategies ---
+interface PaginationConfig {
+    urlGenerator: (page: number, feedUrl?: string) => string;
+    mode: 'RSS_PARAM' | 'HTML_SCRAPE' | 'JSON_API';
+    htmlSelector?: string; 
+    jsonParser?: (data: any) => Article[];
+}
+
+const FEED_PAGINATION_OVERRIDES: Record<string, PaginationConfig> = {
+    'cnbeta': {
+        urlGenerator: (page) => `https://m.cnbeta.com.tw/list/latest/${page}`,
+        mode: 'HTML_SCRAPE',
+        htmlSelector: '.list .item a, .list-box .item a, .txt-list li a' 
+    },
+    'hackernews': {
+        urlGenerator: (page) => `https://news.ycombinator.com/news?p=${page}`,
+        mode: 'HTML_SCRAPE',
+        htmlSelector: '.titleline > a'
+    },
+    'v2ex': {
+        urlGenerator: (page) => `https://www.v2ex.com/recent?p=${page}`,
+        mode: 'HTML_SCRAPE',
+        htmlSelector: '.item_title > a'
+    },
+    'sspai': {
+        urlGenerator: (page) => `https://sspai.com/api/v1/article/index/page/get?limit=20&offset=${(page - 1) * 20}`,
+        mode: 'JSON_API',
+        jsonParser: (json: any) => {
+            if (!json || !json.data) return [];
+            return json.data.map((item: any) => ({
+                guid: item.id.toString(),
+                title: item.title,
+                link: `https://sspai.com/post/${item.id}`,
+                pubDate: new Date(item.released_time * 1000).toISOString(),
+                author: item.author?.nickname || 'SSPai',
+                contentSnippet: item.summary,
+                content: processHtmlContent(item.body || '', 'https://sspai.com') // Process API content immediately
+            }));
+        }
+    },
+    '36kr': {
+        urlGenerator: (page) => `https://36kr.com/pp/api/aggregation-entity?type=web_news&per_page=20&page=${page}`,
+        mode: 'JSON_API',
+        jsonParser: (json: any) => {
+            if (!json || !json.data || !json.data.items) return [];
+            return json.data.items.map((wrapper: any) => {
+                const item = wrapper.post;
+                if (!item) return null;
+                return {
+                    guid: item.id.toString(),
+                    title: item.title,
+                    link: `https://36kr.com/p/${item.id}`,
+                    pubDate: item.published_at,
+                    author: item.user?.name || '36Kr',
+                    contentSnippet: item.summary,
+                    content: ''
+                };
+            }).filter((i: any) => i !== null);
+        }
+    }
+};
+
+// Helper to parse articles from a raw HTML listing page
+const fetchHtmlList = async (url: string, selectorHint: string): Promise<Article[]> => {
+    console.log(`[Scraper] Fetching ${url} with selector: ${selectorHint}`);
+    const html = await fetchProxyText(url);
+    if (!html) return [];
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const articles: Article[] = [];
+    const baseUrl = new URL(url).origin;
+    const seenLinks = new Set<string>();
+
+    let nodes = doc.querySelectorAll(selectorHint);
+    
+    // Fallback selectors
+    if (nodes.length === 0) {
+        console.log('[Scraper] Specific selector failed, using generic fallback');
+        nodes = doc.querySelectorAll('h2 a, h3 a, .entry-title a, .post-title a, article a, .card a');
+    }
+
+    nodes.forEach(node => {
+        const anchor = node.tagName === 'A' ? (node as HTMLAnchorElement) : node.querySelector('a');
+        
+        if (anchor) {
+            const title = anchor.textContent?.trim() || anchor.getAttribute('title') || "Untitled";
+            let href = anchor.getAttribute('href');
+
+            if (href && title.length > 5) {
+                try {
+                     if (!href.startsWith('http')) {
+                        if (href.startsWith('/')) {
+                            href = `${baseUrl}${href}`;
+                        } else {
+                            href = new URL(href, url).href;
+                        }
+                    }
+                    
+                    if (seenLinks.has(href)) return;
+                    seenLinks.add(href);
+
+                    if (href.includes('#comment') || href.includes('/tag/') || href.includes('/category/') || href.includes('javascript:')) return;
+
+                    articles.push({
+                        guid: href,
+                        title,
+                        link: href,
+                        pubDate: new Date().toISOString(), 
+                        content: '',
+                        contentSnippet: 'Fetched from web listing'
+                    });
+                } catch (e) {
+                    // invalid url, skip
+                }
+            }
+        }
+    });
+
+    return articles;
+};
+
+// Helper to fetch and parse JSON API
+const fetchJsonList = async (url: string, parser: (data: any) => Article[]): Promise<Article[]> => {
+    const jsonStr = await fetchProxyText(url);
+    if (!jsonStr) return [];
+    
+    try {
+        const data = JSON.parse(jsonStr);
+        return parser(data);
+    } catch (e) {
+        console.error("Failed to parse JSON API response", e);
+        return [];
+    }
+};
+
+export const fetchRSSFeed = async (feed: RSSFeed, page: number = 1): Promise<Article[]> => {
   try {
-    const text = await fetchProxyText(feedUrl);
-    if (!text) throw new Error("Failed to fetch RSS feed");
+    let targetUrl = feed.url;
+    let mode: 'RSS' | 'HTML' | 'JSON_API' = 'RSS';
+    let htmlConfig: PaginationConfig | undefined;
+
+    // --- Pagination Logic ---
+    if (page > 1) {
+        if (FEED_PAGINATION_OVERRIDES[feed.id]) {
+            htmlConfig = FEED_PAGINATION_OVERRIDES[feed.id];
+            targetUrl = htmlConfig.urlGenerator(page, feed.url);
+            
+            if (htmlConfig.mode === 'HTML_SCRAPE') mode = 'HTML';
+            if (htmlConfig.mode === 'JSON_API') mode = 'JSON_API';
+        } else {
+            // Generic Fallback
+            const separator = feed.url.includes('?') ? '&' : '?';
+            targetUrl = `${feed.url}${separator}page=${page}&p=${page}`;
+        }
+    }
+
+    // --- Mode: JSON API ---
+    if (mode === 'JSON_API' && htmlConfig && htmlConfig.jsonParser) {
+        return await fetchJsonList(targetUrl, htmlConfig.jsonParser);
+    }
+
+    // --- Mode: HTML Scraping ---
+    if (mode === 'HTML' && htmlConfig && htmlConfig.htmlSelector) {
+        try {
+            return await fetchHtmlList(targetUrl, htmlConfig.htmlSelector);
+        } catch (e) {
+            console.warn(`[RSS] Scrape failed for ${targetUrl}`, e);
+            return []; 
+        }
+    }
+
+    // --- Mode: Standard RSS ---
+    const text = await fetchProxyText(targetUrl);
+    
+    if (!text) {
+        if (page > 1) return []; // Stop pagination smoothly
+        throw new Error(`Failed to fetch RSS feed from ${targetUrl}`);
+    }
     
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(text, "text/xml");
     
     const parseError = xmlDoc.querySelector("parsererror");
     if (parseError) {
-        throw new Error("XML Parsing failed: " + parseError.textContent);
+        // Fallback for Page > 1 if RSS fails
+        if (page > 1) {
+             try {
+                return await fetchHtmlList(targetUrl, 'h2 a, h3 a, .entry-title a');
+             } catch (e) {
+                return [];
+             }
+        }
+        throw new Error("XML Parsing failed.");
     }
     
     let items = Array.from(xmlDoc.querySelectorAll("item"));
@@ -63,10 +339,14 @@ export const fetchRSSFeed = async (feedUrl: string): Promise<Article[]> => {
       const description = item.querySelector("description")?.textContent;
       const summary = item.querySelector("summary")?.textContent;
       
-      const content = contentEncoded || contentTag || description || summary || "";
+      // Prioritize full content
+      let rawContent = contentEncoded || contentTag || description || summary || "";
+      
+      // Process content immediately to fix lazy images in the feed itself
+      const processedContent = processHtmlContent(rawContent, link || feed.url);
       
       const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = description || summary || content;
+      tempDiv.innerHTML = processedContent;
       const plainText = tempDiv.textContent || "";
       const contentSnippet = plainText.substring(0, 150) + (plainText.length > 150 ? "..." : "");
 
@@ -76,11 +356,14 @@ export const fetchRSSFeed = async (feedUrl: string): Promise<Article[]> => {
         pubDate,
         guid,
         author,
-        content, // This might be short initially
+        content: processedContent, 
         contentSnippet
       };
     });
   } catch (error) {
+    if (page > 1) {
+        return [];
+    }
     console.error("Error fetching RSS feed:", error);
     throw error;
   }
@@ -90,11 +373,7 @@ export const fetchWebPage = async (url: string): Promise<string | null> => {
     const html = await fetchProxyText(url);
     if (!html) return null;
 
-    // Inject <base> tag so relative links (css, images) work
     const baseTag = `<base href="${url}" target="_blank">`;
-    // We also remove X-Frame-Options headers effectively because we are rendering raw HTML string
-    
-    // Attempt to inject after <head>, or at the start if no head
     if (html.includes('<head>')) {
         return html.replace('<head>', `<head>${baseTag}`);
     } else {
@@ -107,67 +386,63 @@ export const fetchFullArticle = async (url: string): Promise<string | null> => {
     const html = await fetchProxyText(url);
     if (!html) return null;
     
+    // Process the entire HTML first to fix lazy images before extracting content
+    // This ensures that when we grab innerHTML later, the images are already fixed
+    const processedHtml = processHtmlContent(html, url);
+    
     const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    
-    // Fix relative links (img src, a href) manually for extraction
-    const baseUrl = new URL(url);
-    
-    const fixAttribute = (tagName: string, attrName: string) => {
-        doc.querySelectorAll(tagName).forEach(el => {
-            const val = el.getAttribute(attrName);
-            if (val && !val.startsWith('http') && !val.startsWith('data:')) {
-                try {
-                    const absolute = new URL(val, baseUrl.origin).href;
-                    el.setAttribute(attrName, absolute);
-                } catch (e) {
-                    // Ignore invalid URLs
-                }
-            }
-        });
-    };
+    const doc = parser.parseFromString(processedHtml, 'text/html');
 
-    fixAttribute('img', 'src');
-    fixAttribute('a', 'href');
-    fixAttribute('iframe', 'src');
-
-    // Remove clutter and interactive elements that don't work in reader view
     const junkSelectors = [
         'script', 'style', 'iframe', 'nav', 'header', 'footer', 
         '.ads', '.advertisement', '.social-share', '.comments', '#comments', 
         '.sidebar', '.related-posts', '.newsletter-signup', '.cookie-consent',
-        'button', 'form'
+        'button', 'form', '.layout-header', '.layout-footer', '.cb-modal',
+        '.is-hidden', '.visually-hidden', '#ad_container', 'aside'
     ];
     junkSelectors.forEach(sel => {
         doc.querySelectorAll(sel).forEach(el => el.remove());
     });
 
-    // Content Extraction Heuristics
-    
-    // 1. Look for <article> tag
     const article = doc.querySelector('article');
     if (article) return article.innerHTML;
 
-    // 2. Look for common class names for main content
     const contentClasses = [
-        '.post-content', '.article-content', '.entry-content', 
-        '.rich_media_content', '.main-content', '#content', 
-        '.article-body', '.story-body'
+        '.post-content', 
+        '.article-content', 
+        '.entry-content', 
+        '.c-entry-content', 
+        '.duet--article--text-component', 
+        '.rich_media_content', 
+        '.main-content', 
+        '#content', 
+        '.article-body', 
+        '.story-body', 
+        '.topic-content', 
+        '.post_content',
+        '#art_content', 
+        '.article-cont', 
+        '.content' 
     ];
+    
     for (const cls of contentClasses) {
-        const el = doc.querySelector(cls);
-        if (el) return el.innerHTML;
+        const elements = doc.querySelectorAll(cls);
+        if (elements.length > 0) {
+            if (elements.length > 1) {
+                return Array.from(elements).map(el => el.innerHTML).join('<br/>');
+            }
+            return elements[0].innerHTML;
+        }
     }
 
-    // 3. Fallback: Find the container with the most paragraphs
+    // Heuristic Fallback
     let bestCandidate: Element | null = null;
     let maxParagraphs = 0;
     
     doc.querySelectorAll('div, section, main').forEach(container => {
+        // Simple heuristic: container with most <p> tags
         const pCount = container.querySelectorAll('p').length;
-        const aCount = container.querySelectorAll('a').length;
-        
-        if (pCount > 3 && pCount > maxParagraphs && (pCount / (aCount + 1) > 0.3)) {
+        if (pCount > 3 && pCount > maxParagraphs) {
             maxParagraphs = pCount;
             bestCandidate = container;
         }

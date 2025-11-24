@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Article } from '../types';
-import { cleanContentWithAI, summarizeContentWithAI } from '../services/geminiService';
 import { fetchFullArticle, fetchWebPage } from '../services/rssService';
-import { ExternalLink, Sparkles, BookOpen, Globe, MonitorPlay, Zap, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { ExternalLink, BookOpen, Globe, MonitorPlay, Loader2, Globe as GlobeIcon } from 'lucide-react';
 
 interface ArticleViewProps {
   article: Article | null;
@@ -22,25 +21,13 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
   const [isLoadingWeb, setIsLoadingWeb] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false); // New state for initial load
   
-  // AI states
-  const [showAiClean, setShowAiClean] = useState(false);
-  const [cleanedContent, setCleanedContent] = useState<string>('');
-  const [summary, setSummary] = useState<string>('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isSummarizing, setIsSummarizing] = useState(false);
-  
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Reset state when article changes
   useEffect(() => {
     setActiveTab('READER');
-    setShowAiClean(false);
-    setCleanedContent('');
-    setSummary('');
     setFullContent(null);
     setWebPageContent(null);
-    setIsProcessing(false);
-    setIsSummarizing(false);
     setIsLoadingFullContent(false);
     setIsLoadingWeb(false);
     
@@ -93,40 +80,6 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
       }
   }, [activeTab, article]);
 
-  const handleAiToggle = async () => {
-    if (!article) return;
-    
-    if (showAiClean) {
-        setShowAiClean(false);
-        return;
-    }
-
-    if (cleanedContent) {
-        setShowAiClean(true);
-        return;
-    }
-    
-    setIsProcessing(true);
-    setShowAiClean(true);
-    
-    // Use the best available content
-    const sourceContent = fullContent || article.content;
-    const result = await cleanContentWithAI(sourceContent);
-    
-    setCleanedContent(result);
-    setIsProcessing(false);
-  };
-
-  const handleSummarize = async () => {
-      if(!article) return;
-      setIsSummarizing(true);
-      // Use full content if available for better summary
-      const sourceContent = fullContent || article.content || article.contentSnippet || "";
-      const result = await summarizeContentWithAI(sourceContent);
-      setSummary(result);
-      setIsSummarizing(false);
-  }
-
   if (!article) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-gray-600 bg-gray-950 h-full p-8 text-center select-none">
@@ -138,21 +91,6 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
       </div>
     );
   }
-
-  const renderMarkdown = (text: string) => {
-    let html = text
-        .replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold text-gray-200 mt-6 mb-3">$1</h3>')
-        .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold text-gray-100 mt-8 mb-4 pb-2 border-b border-gray-800">$1</h2>')
-        .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-extrabold text-white mt-10 mb-6">$1</h1>')
-        .replace(/\*\*(.*)\*\*/gim, '<strong class="text-gray-100 font-bold">$1</strong>')
-        .replace(/\*(.*)\*/gim, '<em class="text-gray-300">$1</em>')
-        .replace(/!\[(.*?)\]\((.*?)\)/gim, '<div class="my-6 rounded-lg overflow-hidden border border-gray-800 bg-gray-900"><img alt="$1" src="$2" class="w-full h-auto object-contain max-h-[600px]" loading="lazy" /></div>')
-        .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline underline-offset-2">$1</a>')
-        .replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-gray-700 pl-4 py-1 my-4 text-gray-400 italic bg-gray-900/30 rounded-r">$1</blockquote>')
-        .replace(/^- (.*$)/gim, '<li class="ml-4 list-disc text-gray-300 mb-1">$1</li>')
-        .replace(/\n/gim, '<br />');
-    return html;
-  };
 
   const displayContent = fullContent || article.content;
   const isContentVeryShort = !fullContent && (article.content?.length || 0) < 500;
@@ -182,23 +120,13 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
         <div className="flex items-center space-x-2">
             {activeTab === 'READER' && (
                 <>
-                    <button
-                        onClick={handleAiToggle}
-                        disabled={showLoadingScreen}
-                        className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-all ${showAiClean ? 'bg-indigo-900/50 text-indigo-200 shadow-sm ring-1 ring-indigo-500/50' : 'text-gray-500 hover:text-indigo-400 disabled:opacity-30'}`}
-                        title="Rewrite with AI to remove clutter"
-                    >
-                        {isProcessing ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-2" />}
-                        {showAiClean ? 'AI Polished' : 'AI Polish'}
-                    </button>
-                    
                     {!fullContent && !isLoadingFullContent && !showLoadingScreen && (
                          <button
                             onClick={() => handleLoadFullContent(article.link)}
                             className="flex items-center px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                             title="Force fetch full content from source"
                         >
-                            <Globe className="w-3.5 h-3.5 mr-2" />
+                            <GlobeIcon className="w-3.5 h-3.5 mr-2" />
                             Load Full
                         </button>
                     )}
@@ -209,15 +137,6 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
                             Fetching...
                         </span>
                     )}
-
-                    <button
-                        onClick={handleSummarize}
-                        disabled={isSummarizing || !!summary || showLoadingScreen}
-                        className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium border border-emerald-900/50 bg-emerald-950/30 text-emerald-500 hover:bg-emerald-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                        {isSummarizing ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Zap className="w-3.5 h-3.5 mr-2" />}
-                        {summary ? 'Summarized' : 'TL;DR'}
-                    </button>
                 </>
             )}
             
@@ -279,29 +198,13 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
                     {article.author || 'Unknown'}
                 </span>
                 <span>{new Date(article.pubDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                {showAiClean && (
-                    <span className="flex items-center text-indigo-400 text-xs">
-                        <Sparkles className="w-3 h-3 mr-1" /> AI Cleaned
-                    </span>
-                )}
-                {fullContent && !showAiClean && !showLoadingScreen && (
+                {fullContent && !showLoadingScreen && (
                      <span className="flex items-center text-green-400 text-xs">
-                        <Globe className="w-3 h-3 mr-1" /> Full Content
+                        <GlobeIcon className="w-3 h-3 mr-1" /> Full Content
                     </span>
                 )}
             </div>
           </header>
-
-          {/* AI Summary Block */}
-          {summary && !showLoadingScreen && (
-              <div className="mb-10 p-5 bg-emerald-950/20 border border-emerald-900/50 rounded-xl relative overflow-hidden group animate-in fade-in slide-in-from-top-4 duration-500">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/50"></div>
-                  <h4 className="font-bold text-emerald-400 mb-3 flex items-center text-sm uppercase tracking-wider">
-                      <Zap className="w-4 h-4 mr-2"/> AI Summary
-                  </h4>
-                  <div className="text-emerald-100/90 leading-relaxed text-sm space-y-2" dangerouslySetInnerHTML={{ __html: renderMarkdown(summary) }} />
-              </div>
-          )}
 
           {/* Main Content */}
           <div className="min-h-[50vh]">
@@ -319,28 +222,6 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
                         <p className="text-gray-600 text-xs">Parsing content from {new URL(article.link).hostname}</p>
                     </div>
                 </div>
-            ) : showAiClean ? (
-                // AI Clean Mode
-                isProcessing ? (
-                    <div className="space-y-6 py-8 animate-pulse max-w-2xl mx-auto">
-                        <div className="h-4 bg-gray-800 rounded w-full"></div>
-                        <div className="h-4 bg-gray-800 rounded w-11/12"></div>
-                        <div className="h-4 bg-gray-800 rounded w-full"></div>
-                        <div className="h-64 bg-gray-800 rounded-lg w-full my-8 opacity-50"></div>
-                        <div className="h-4 bg-gray-800 rounded w-3/4"></div>
-                        <div className="h-4 bg-gray-800 rounded w-5/6"></div>
-                        <p className="text-center text-indigo-400/50 text-sm mt-8 animate-bounce">Gemini is rewriting the article...</p>
-                    </div>
-                ) : cleanedContent ? (
-                    <div className="prose prose-invert prose-lg max-w-none prose-headings:text-gray-100 prose-p:text-gray-300 prose-a:text-blue-400 prose-img:rounded-xl prose-img:border prose-img:border-gray-800">
-                        <div dangerouslySetInnerHTML={{ __html: renderMarkdown(cleanedContent) }} />
-                    </div>
-                ) : (
-                    <div className="text-center py-20">
-                        <p className="text-red-400 mb-2">Could not clean content.</p>
-                        <button onClick={() => setShowAiClean(false)} className="text-gray-400 underline hover:text-white">Switch to Original</button>
-                    </div>
-                )
             ) : (
                 // Standard Reader Mode
                 <div className="prose prose-invert prose-lg max-w-none prose-img:rounded-xl prose-img:max-w-full prose-img:h-auto prose-video:w-full prose-headings:text-gray-100 prose-p:text-gray-300 prose-a:text-blue-400">
@@ -356,7 +237,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
                                 onClick={() => handleLoadFullContent(article.link)}
                                 className="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium text-sm"
                             >
-                                <Globe className="w-4 h-4 mr-2"/> Load Full Content
+                                <GlobeIcon className="w-4 h-4 mr-2"/> Load Full Content
                             </button>
                         </div>
                     )}
@@ -368,7 +249,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article }) => {
                                 onClick={() => handleLoadFullContent(article.link)}
                                 className="inline-flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors font-medium text-xs border border-gray-700"
                             >
-                                <Globe className="w-3 h-3 mr-2"/> Try Loading Full Content
+                                <GlobeIcon className="w-3 h-3 mr-2"/> Try Loading Full Content
                             </button>
                         </div>
                     )}
