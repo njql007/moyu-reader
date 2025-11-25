@@ -10,6 +10,7 @@ import { AlertCircle, ChevronLeft } from 'lucide-react';
 const App: React.FC = () => {
   const [selectedFeed, setSelectedFeed] = useState<RSSFeed | null>(FEEDS[0]); 
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [isSeniorMode, setIsSeniorMode] = useState(false);
   
   const [feedCache, setFeedCache] = useState<Record<string, FeedState>>({});
 
@@ -131,14 +132,18 @@ const App: React.FC = () => {
         <Sidebar 
             selectedFeedId={selectedFeed?.id || null} 
             onSelectFeed={handleFeedSelect} 
+            isSeniorMode={isSeniorMode}
+            onToggleSeniorMode={() => setIsSeniorMode(!isSeniorMode)}
         />
       </div>
       
-      {/* Mobile Sidebar (Optional: You could hide Sidebar on mobile if screen is too narrow, but standard layout usually keeps it or puts it in a drawer. Keeping it visible alongside list for now as per previous design) */}
+      {/* Mobile Sidebar */}
       <div className="flex-shrink-0 h-full md:hidden z-0">
          <Sidebar 
             selectedFeedId={selectedFeed?.id || null} 
             onSelectFeed={handleFeedSelect} 
+            isSeniorMode={isSeniorMode}
+            onToggleSeniorMode={() => setIsSeniorMode(!isSeniorMode)}
         />
       </div>
 
@@ -154,6 +159,7 @@ const App: React.FC = () => {
             onLoadMore={handleLoadMore}
             lastUpdated={currentFeedState?.lastUpdated || 0}
             hasMore={currentFeedState?.hasMore ?? false}
+            isSeniorMode={isSeniorMode}
         />
       </div>
 
@@ -183,6 +189,7 @@ const App: React.FC = () => {
             <ArticleView 
                 article={selectedArticle} 
                 onBack={() => setSelectedArticle(null)}
+                isSeniorMode={isSeniorMode}
             />
             
             {/* Mobile Visual Cue: A subtle shadow on the left edge of the content panel */}

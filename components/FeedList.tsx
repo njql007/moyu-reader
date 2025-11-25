@@ -12,6 +12,7 @@ interface FeedListProps {
   onLoadMore: () => void;
   lastUpdated: number;
   hasMore: boolean;
+  isSeniorMode: boolean;
 }
 
 export const FeedList: React.FC<FeedListProps> = ({ 
@@ -23,7 +24,8 @@ export const FeedList: React.FC<FeedListProps> = ({
   onRefresh,
   onLoadMore,
   lastUpdated,
-  hasMore
+  hasMore,
+  isSeniorMode
 }) => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -52,17 +54,17 @@ export const FeedList: React.FC<FeedListProps> = ({
 
   if (!selectedFeed) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-500 bg-gray-900 border-r border-gray-800 h-full">
+      <div className={`flex-1 flex items-center justify-center text-gray-500 bg-gray-900 border-r border-gray-800 h-full ${isSeniorMode ? 'text-xl' : ''}`}>
         Select a feed to start
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full w-full md:w-80 lg:w-96 bg-gray-900 border-r border-gray-800 transition-all">
+    <div className={`flex flex-col h-full w-full md:w-80 lg:w-96 bg-gray-900 border-r border-gray-800 transition-all`}>
       {/* Header */}
       <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-gray-850 sticky top-0 z-10 shrink-0">
-        <h2 className="font-semibold text-gray-200 truncate pr-2">{selectedFeed.name}</h2>
+        <h2 className={`font-semibold text-gray-200 truncate pr-2 ${isSeniorMode ? 'text-lg' : ''}`}>{selectedFeed.name}</h2>
         <button 
           onClick={onRefresh} 
           className="p-2 hover:bg-gray-700 rounded-full transition-colors shrink-0"
@@ -98,15 +100,21 @@ export const FeedList: React.FC<FeedListProps> = ({
                   <li key={article.guid}>
                     <button
                       onClick={() => onSelectArticle(article)}
-                      className={`w-full text-left p-4 border-b border-gray-800 transition-colors hover:bg-gray-800 focus:outline-none ${
+                      className={`w-full text-left border-b border-gray-800 transition-colors hover:bg-gray-800 focus:outline-none ${
+                        isSeniorMode ? 'p-6' : 'p-4'
+                      } ${
                         isSelected ? 'bg-gray-800 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
                       }`}
                     >
-                      <h3 className={`font-medium mb-1 line-clamp-2 ${isSelected ? 'text-blue-400' : 'text-gray-200'}`}>
+                      <h3 className={`font-medium mb-1 ${
+                          isSeniorMode 
+                            ? 'text-xl leading-snug text-gray-100 line-clamp-3' 
+                            : 'line-clamp-2 text-gray-200'
+                          } ${isSelected && !isSeniorMode ? 'text-blue-400' : ''}`}>
                         {article.title}
                       </h3>
-                      <p className="text-xs text-gray-500 mb-2">{timeString}</p>
-                      <p className="text-xs text-gray-400 line-clamp-2">
+                      <p className={`${isSeniorMode ? 'text-sm mb-3 text-gray-400' : 'text-xs text-gray-500 mb-2'}`}>{timeString}</p>
+                      <p className={`${isSeniorMode ? 'text-base text-gray-300' : 'text-xs text-gray-400'} line-clamp-2`}>
                         {article.contentSnippet}
                       </p>
                     </button>
@@ -117,7 +125,7 @@ export const FeedList: React.FC<FeedListProps> = ({
         )}
         
         {!isLoading && articles.length === 0 && (
-          <div className="p-8 text-center text-gray-500">
+          <div className={`p-8 text-center text-gray-500 ${isSeniorMode ? 'text-lg' : ''}`}>
             No articles found.
           </div>
         )}

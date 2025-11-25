@@ -6,11 +6,12 @@ import { ExternalLink, BookOpen, Globe, MonitorPlay, Loader2, Globe as GlobeIcon
 interface ArticleViewProps {
   article: Article | null;
   onBack?: () => void;
+  isSeniorMode: boolean;
 }
 
 type TabMode = 'READER' | 'WEB';
 
-export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => {
+export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, isSeniorMode }) => {
   const [activeTab, setActiveTab] = useState<TabMode>('READER');
   
   // Content states
@@ -87,8 +88,8 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => 
         <div className="bg-gray-900 p-6 rounded-full mb-6 animate-pulse">
             <MonitorPlay className="w-12 h-12 text-blue-500/50" />
         </div>
-        <h3 className="text-xl font-medium text-gray-300 mb-2">Ready to Slack Off?</h3>
-        <p className="max-w-md text-gray-500">Select a tech feed from the left to start your distraction-free reading session.</p>
+        <h3 className={`font-medium text-gray-300 mb-2 ${isSeniorMode ? 'text-2xl' : 'text-xl'}`}>Ready to Slack Off?</h3>
+        <p className={`max-w-md text-gray-500 ${isSeniorMode ? 'text-lg' : ''}`}>Select a tech feed from the left to start your distraction-free reading session.</p>
       </div>
     );
   }
@@ -115,17 +116,17 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => 
             <div className="flex bg-gray-950 rounded-lg p-1 border border-gray-800">
                 <button
                     onClick={() => setActiveTab('READER')}
-                    className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === 'READER' ? 'bg-gray-800 text-white shadow-sm ring-1 ring-gray-700' : 'text-gray-500 hover:text-gray-300'}`}
+                    className={`flex items-center px-3 py-1.5 rounded-md font-medium transition-all ${isSeniorMode ? 'text-sm' : 'text-xs'} ${activeTab === 'READER' ? 'bg-gray-800 text-white shadow-sm ring-1 ring-gray-700' : 'text-gray-500 hover:text-gray-300'}`}
                 >
-                    <BookOpen className="w-3.5 h-3.5 mr-2" />
+                    <BookOpen className={`${isSeniorMode ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2`} />
                     Reader
                 </button>
                 <button
                     onClick={() => setActiveTab('WEB')}
-                    className={`flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === 'WEB' ? 'bg-blue-900/30 text-blue-200 shadow-sm ring-1 ring-blue-500/50' : 'text-gray-500 hover:text-blue-400'}`}
+                    className={`flex items-center px-3 py-1.5 rounded-md font-medium transition-all ${isSeniorMode ? 'text-sm' : 'text-xs'} ${activeTab === 'WEB' ? 'bg-blue-900/30 text-blue-200 shadow-sm ring-1 ring-blue-500/50' : 'text-gray-500 hover:text-blue-400'}`}
                     title="View original webpage"
                 >
-                    <Globe className="w-3.5 h-3.5 mr-2" />
+                    <Globe className={`${isSeniorMode ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2`} />
                     Web
                 </button>
             </div>
@@ -137,17 +138,17 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => 
                     {!fullContent && !isLoadingFullContent && !showLoadingScreen && (
                          <button
                             onClick={() => handleLoadFullContent(article.link)}
-                            className="flex items-center px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                            className={`flex items-center px-3 py-1.5 rounded-md font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors ${isSeniorMode ? 'text-sm' : 'text-xs'}`}
                             title="Force fetch full content from source"
                         >
-                            <GlobeIcon className="w-3.5 h-3.5 mr-2" />
+                            <GlobeIcon className={`${isSeniorMode ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2`} />
                             Load Full
                         </button>
                     )}
                     
                     {isLoadingFullContent && !showLoadingScreen && (
-                        <span className="flex items-center px-3 py-1.5 text-xs font-medium text-blue-400 animate-pulse">
-                            <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                        <span className={`flex items-center px-3 py-1.5 font-medium text-blue-400 animate-pulse ${isSeniorMode ? 'text-sm' : 'text-xs'}`}>
+                            <Loader2 className={`${isSeniorMode ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2 animate-spin`} />
                             Fetching...
                         </span>
                     )}
@@ -203,18 +204,18 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => 
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12">
           
           {/* Article Header */}
-          <header className="mb-8 border-b border-gray-800/50 pb-8">
-            <h1 className="text-xl md:text-3xl font-bold text-gray-100 leading-tight mb-4 font-display">
+          <header className={`mb-8 border-b border-gray-800/50 pb-8 ${isSeniorMode ? 'space-y-4' : ''}`}>
+            <h1 className={`${isSeniorMode ? 'text-3xl md:text-5xl leading-tight' : 'text-xl md:text-3xl leading-tight'} font-bold text-gray-100 mb-4 font-display`}>
                 {article.title}
             </h1>
-            <div className="flex flex-wrap items-center gap-4 text-xs md:text-sm text-gray-500 font-mono">
+            <div className={`flex flex-wrap items-center gap-4 ${isSeniorMode ? 'text-base md:text-lg' : 'text-xs md:text-sm'} text-gray-500 font-mono`}>
                 <span className="flex items-center text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">
                     {article.author || 'Unknown'}
                 </span>
                 <span>{new Date(article.pubDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
                 {fullContent && !showLoadingScreen && (
-                     <span className="flex items-center text-green-400 text-xs">
-                        <GlobeIcon className="w-3 h-3 mr-1" /> Full Content
+                     <span className={`flex items-center text-green-400 ${isSeniorMode ? 'text-sm' : 'text-xs'}`}>
+                        <GlobeIcon className={`${isSeniorMode ? 'w-4 h-4' : 'w-3 h-3'} mr-1`} /> Full Content
                     </span>
                 )}
             </div>
@@ -232,13 +233,16 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => 
                         </div>
                     </div>
                     <div className="text-center space-y-2">
-                        <p className="text-gray-300 font-medium">Fetching full article...</p>
+                        <p className={`text-gray-300 font-medium ${isSeniorMode ? 'text-xl' : ''}`}>Fetching full article...</p>
                         <p className="text-gray-600 text-xs">Parsing content from {new URL(article.link).hostname}</p>
                     </div>
                 </div>
             ) : (
-                // Standard Reader Mode
-                <div className="prose prose-invert prose-lg max-w-none prose-img:rounded-xl prose-img:max-w-full prose-img:h-auto prose-video:w-full prose-headings:text-gray-100 prose-p:text-gray-300 prose-a:text-blue-400">
+                // Standard Reader Mode with Senior Mode support
+                <div className={`prose prose-invert max-w-none 
+                    prose-img:rounded-xl prose-img:max-w-full prose-img:h-auto prose-video:w-full 
+                    prose-headings:text-gray-100 prose-p:text-gray-300 prose-a:text-blue-400
+                    ${isSeniorMode ? 'prose-2xl prose-p:text-gray-200 prose-li:text-gray-200' : 'prose-lg'}`}>
                     <div dangerouslySetInnerHTML={{ __html: displayContent }} />
                     
                     {/* Fallback if content is missing or very short and not yet fetched */}
@@ -249,7 +253,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => 
                             </p>
                             <button 
                                 onClick={() => handleLoadFullContent(article.link)}
-                                className="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium text-sm"
+                                className={`inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium ${isSeniorMode ? 'text-lg' : 'text-sm'}`}
                             >
                                 <GlobeIcon className="w-4 h-4 mr-2"/> Load Full Content
                             </button>
@@ -258,12 +262,12 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => 
 
                     {isContentVeryShort && !isLoadingFullContent && !fullContent && (
                         <div className="mt-8 pt-8 border-t border-gray-800 text-center">
-                            <p className="text-gray-500 text-sm mb-3">This article seems short. It might be a summary.</p>
+                            <p className={`text-gray-500 mb-3 ${isSeniorMode ? 'text-base' : 'text-sm'}`}>This article seems short. It might be a summary.</p>
                              <button 
                                 onClick={() => handleLoadFullContent(article.link)}
-                                className="inline-flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors font-medium text-xs border border-gray-700"
+                                className={`inline-flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors font-medium border border-gray-700 ${isSeniorMode ? 'text-base' : 'text-xs'}`}
                             >
-                                <GlobeIcon className="w-3 h-3 mr-2"/> Try Loading Full Content
+                                <GlobeIcon className={`${isSeniorMode ? 'w-4 h-4' : 'w-3 h-3'} mr-2`}/> Try Loading Full Content
                             </button>
                         </div>
                     )}
