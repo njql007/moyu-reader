@@ -5,7 +5,7 @@ import { ArticleView } from './components/ArticleView';
 import { RSSFeed, Article, FeedState } from './types';
 import { FEEDS } from './constants';
 import { fetchRSSFeed } from './services/rssService';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronLeft } from 'lucide-react';
 
 const App: React.FC = () => {
   const [selectedFeed, setSelectedFeed] = useState<RSSFeed | null>(FEEDS[0]); 
@@ -125,20 +125,25 @@ const App: React.FC = () => {
   const currentFeedState = selectedFeed ? feedCache[selectedFeed.id] || { articles: [], isLoading: true, error: null, lastUpdated: 0, page: 1, hasMore: true } : null;
 
   return (
-    <div className="flex h-screen w-screen bg-black text-gray-100 overflow-hidden font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
-      {/* 1. Sidebar */}
-      {/* Hidden on Mobile when Article is selected */}
-      <div className={`${selectedArticle ? 'hidden md:block' : 'block'} flex-shrink-0 h-full`}>
+    <div className="flex h-screen w-screen bg-black text-gray-100 overflow-hidden font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200 relative">
+      {/* 1. Sidebar - Always visible in DOM */}
+      <div className="flex-shrink-0 h-full hidden md:block z-20">
         <Sidebar 
             selectedFeedId={selectedFeed?.id || null} 
             onSelectFeed={handleFeedSelect} 
         />
       </div>
+      
+      {/* Mobile Sidebar (Optional: You could hide Sidebar on mobile if screen is too narrow, but standard layout usually keeps it or puts it in a drawer. Keeping it visible alongside list for now as per previous design) */}
+      <div className="flex-shrink-0 h-full md:hidden z-0">
+         <Sidebar 
+            selectedFeedId={selectedFeed?.id || null} 
+            onSelectFeed={handleFeedSelect} 
+        />
+      </div>
 
-      {/* 2. Feed List */}
-      {/* Hidden on Mobile when Article is selected */}
-      {/* Adjusted layout: flex-1 on mobile allows it to fill remaining space next to sidebar without overflow */}
-      <div className={`${selectedArticle ? 'hidden md:flex' : 'flex'} h-full z-10 flex-1 md:flex-none md:w-auto min-w-0`}>
+      {/* 2. Feed List - Always visible in DOM, covered by Article on mobile */}
+      <div className="h-full z-10 flex-1 md:flex-none md:w-96 min-w-0 border-r border-gray-800 bg-gray-900">
         <FeedList 
             selectedFeed={selectedFeed}
             articles={currentFeedState?.articles || []}
@@ -152,13 +157,37 @@ const App: React.FC = () => {
         />
       </div>
 
-      {/* 3. Article View */}
-      {/* Hidden on Mobile when NO Article is selected */}
-      <div className={`${!selectedArticle ? 'hidden md:flex' : 'flex'} flex-1 flex-col h-full overflow-hidden w-full`}>
-        <ArticleView 
-            article={selectedArticle} 
-            onBack={() => setSelectedArticle(null)}
-        />
+      {/* 3. Article View - Slide Over on Mobile, Static on Desktop */}
+      <div 
+        className={`
+            fixed inset-0 z-50 flex
+            transition-transform duration-300 ease-out will-change-transform
+            ${selectedArticle ? 'translate-x-0' : 'translate-x-full'}
+            md:static md:translate-x-0 md:flex-1 md:inset-auto md:w-full
+        `}
+      >
+        {/* Mobile: The "Left Edge" Back Button Area (Blurred Strip) */}
+        <button 
+            className="w-12 h-full bg-black/60 backdrop-blur-md md:hidden flex-shrink-0 cursor-pointer 
+                       flex items-center justify-center group border-r border-white/10 active:bg-black/80 transition-all outline-none"
+            onClick={() => setSelectedArticle(null)}
+            aria-label="Back to list"
+        >
+             <div className="bg-white/10 p-2 rounded-full group-active:scale-90 transition-transform shadow-lg border border-white/5">
+                <ChevronLeft className="w-5 h-5 text-gray-200 group-hover:text-white group-hover:-translate-x-0.5 transition-transform" />
+             </div>
+        </button>
+
+        {/* The Article Content Panel */}
+        <div className="flex-1 h-full bg-gray-950 w-full md:w-auto shadow-2xl md:shadow-none border-l border-gray-800 md:border-l-0 overflow-hidden relative">
+            <ArticleView 
+                article={selectedArticle} 
+                onBack={() => setSelectedArticle(null)}
+            />
+            
+            {/* Mobile Visual Cue: A subtle shadow on the left edge of the content panel */}
+            <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-black/20 to-transparent md:hidden pointer-events-none"></div>
+        </div>
       </div>
       
       {/* Error Toast */}
