@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Article, RSSFeed } from '../types';
-import { Loader2, RefreshCw, ChevronDown } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 interface FeedListProps {
   selectedFeed: RSSFeed | null;
@@ -12,7 +12,7 @@ interface FeedListProps {
   onLoadMore: () => void;
   lastUpdated: number;
   hasMore: boolean;
-  isSeniorMode: boolean;
+  fontSizeLevel: number;
 }
 
 export const FeedList: React.FC<FeedListProps> = ({ 
@@ -25,7 +25,7 @@ export const FeedList: React.FC<FeedListProps> = ({
   onLoadMore,
   lastUpdated,
   hasMore,
-  isSeniorMode
+  fontSizeLevel
 }) => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -52,19 +52,55 @@ export const FeedList: React.FC<FeedListProps> = ({
     };
   }, [hasMore, isLoading, onLoadMore]);
 
+  // Dynamic style generators based on font level
+  const getHeaderSize = () => {
+      if (fontSizeLevel === 3) return 'text-xl';
+      if (fontSizeLevel === 2) return 'text-lg';
+      if (fontSizeLevel === 1) return 'text-base';
+      return 'text-sm';
+  };
+
+  const getItemPadding = () => {
+      if (fontSizeLevel >= 3) return 'p-8';
+      if (fontSizeLevel === 2) return 'p-6';
+      if (fontSizeLevel === 1) return 'p-5';
+      return 'p-4';
+  };
+
+  const getTitleClass = () => {
+      if (fontSizeLevel >= 3) return 'text-2xl leading-tight font-bold';
+      if (fontSizeLevel === 2) return 'text-xl leading-snug font-semibold';
+      if (fontSizeLevel === 1) return 'text-lg leading-snug font-medium';
+      return 'text-base font-medium'; // Default (text-gray-200)
+  };
+
+  const getMetaClass = () => {
+      if (fontSizeLevel >= 3) return 'text-lg mb-4';
+      if (fontSizeLevel === 2) return 'text-base mb-3';
+      if (fontSizeLevel === 1) return 'text-sm mb-2';
+      return 'text-xs mb-2'; // Default
+  };
+
+  const getSnippetClass = () => {
+      if (fontSizeLevel >= 3) return 'text-xl leading-relaxed';
+      if (fontSizeLevel === 2) return 'text-lg leading-relaxed';
+      if (fontSizeLevel === 1) return 'text-base';
+      return 'text-xs'; // Default
+  };
+
   if (!selectedFeed) {
     return (
-      <div className={`flex-1 flex items-center justify-center text-gray-500 bg-gray-900 border-r border-gray-800 h-full ${isSeniorMode ? 'text-xl' : ''}`}>
+      <div className={`flex-1 flex items-center justify-center text-gray-500 bg-gray-900 h-full ${fontSizeLevel > 1 ? 'text-xl' : ''}`}>
         Select a feed to start
       </div>
     );
   }
 
   return (
-    <div className={`flex flex-col h-full w-full md:w-80 lg:w-96 bg-gray-900 border-r border-gray-800 transition-all`}>
+    <div className={`flex flex-col h-full w-full bg-gray-900 transition-all`}>
       {/* Header */}
       <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-gray-850 sticky top-0 z-10 shrink-0">
-        <h2 className={`font-semibold text-gray-200 truncate pr-2 ${isSeniorMode ? 'text-lg' : ''}`}>{selectedFeed.name}</h2>
+        <h2 className={`font-semibold text-gray-200 truncate pr-2 ${getHeaderSize()}`}>{selectedFeed.name}</h2>
         <button 
           onClick={onRefresh} 
           className="p-2 hover:bg-gray-700 rounded-full transition-colors shrink-0"
@@ -100,21 +136,17 @@ export const FeedList: React.FC<FeedListProps> = ({
                   <li key={article.guid}>
                     <button
                       onClick={() => onSelectArticle(article)}
-                      className={`w-full text-left border-b border-gray-800 transition-colors hover:bg-gray-800 focus:outline-none ${
-                        isSeniorMode ? 'p-6' : 'p-4'
-                      } ${
+                      className={`w-full text-left border-b border-gray-800 transition-colors hover:bg-gray-800 focus:outline-none ${getItemPadding()} ${
                         isSelected ? 'bg-gray-800 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
                       }`}
                     >
-                      <h3 className={`font-medium mb-1 ${
-                          isSeniorMode 
-                            ? 'text-xl leading-snug text-gray-100 line-clamp-3' 
-                            : 'line-clamp-2 text-gray-200'
-                          } ${isSelected && !isSeniorMode ? 'text-blue-400' : ''}`}>
+                      <h3 className={`${getTitleClass()} mb-1 ${
+                          isSelected && fontSizeLevel === 0 ? 'text-blue-400' : 'text-gray-200'
+                          } ${fontSizeLevel > 0 ? 'text-gray-100' : ''} line-clamp-3`}>
                         {article.title}
                       </h3>
-                      <p className={`${isSeniorMode ? 'text-sm mb-3 text-gray-400' : 'text-xs text-gray-500 mb-2'}`}>{timeString}</p>
-                      <p className={`${isSeniorMode ? 'text-base text-gray-300' : 'text-xs text-gray-400'} line-clamp-2`}>
+                      <p className={`${getMetaClass()} text-gray-500`}>{timeString}</p>
+                      <p className={`${getSnippetClass()} text-gray-400 line-clamp-2`}>
                         {article.contentSnippet}
                       </p>
                     </button>
@@ -125,7 +157,7 @@ export const FeedList: React.FC<FeedListProps> = ({
         )}
         
         {!isLoading && articles.length === 0 && (
-          <div className={`p-8 text-center text-gray-500 ${isSeniorMode ? 'text-lg' : ''}`}>
+          <div className={`p-8 text-center text-gray-500 ${fontSizeLevel > 1 ? 'text-lg' : ''}`}>
             No articles found.
           </div>
         )}

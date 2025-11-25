@@ -5,12 +5,14 @@ import { ArticleView } from './components/ArticleView';
 import { RSSFeed, Article, FeedState } from './types';
 import { FEEDS } from './constants';
 import { fetchRSSFeed } from './services/rssService';
-import { AlertCircle, ChevronLeft } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 const App: React.FC = () => {
   const [selectedFeed, setSelectedFeed] = useState<RSSFeed | null>(FEEDS[0]); 
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-  const [isSeniorMode, setIsSeniorMode] = useState(false);
+  
+  // 0: Default, 1: Large, 2: Extra Large, 3: Huge
+  const [fontSizeLevel, setFontSizeLevel] = useState<number>(0);
   
   const [feedCache, setFeedCache] = useState<Record<string, FeedState>>({});
 
@@ -123,6 +125,10 @@ const App: React.FC = () => {
       }
   };
 
+  const cycleFontSize = () => {
+      setFontSizeLevel(prev => (prev + 1) % 4);
+  };
+
   const currentFeedState = selectedFeed ? feedCache[selectedFeed.id] || { articles: [], isLoading: true, error: null, lastUpdated: 0, page: 1, hasMore: true } : null;
 
   return (
@@ -132,8 +138,8 @@ const App: React.FC = () => {
         <Sidebar 
             selectedFeedId={selectedFeed?.id || null} 
             onSelectFeed={handleFeedSelect} 
-            isSeniorMode={isSeniorMode}
-            onToggleSeniorMode={() => setIsSeniorMode(!isSeniorMode)}
+            fontSizeLevel={fontSizeLevel}
+            onCycleFontSize={cycleFontSize}
         />
       </div>
       
@@ -142,13 +148,13 @@ const App: React.FC = () => {
          <Sidebar 
             selectedFeedId={selectedFeed?.id || null} 
             onSelectFeed={handleFeedSelect} 
-            isSeniorMode={isSeniorMode}
-            onToggleSeniorMode={() => setIsSeniorMode(!isSeniorMode)}
+            fontSizeLevel={fontSizeLevel}
+            onCycleFontSize={cycleFontSize}
         />
       </div>
 
-      {/* 2. Feed List - Always visible in DOM, covered by Article on mobile */}
-      <div className="h-full z-10 flex-1 md:flex-none md:w-96 min-w-0 border-r border-gray-800 bg-gray-900">
+      {/* 2. Feed List */}
+      <div className="h-full z-10 flex-1 md:flex-none md:w-96 min-w-0 bg-gray-900">
         <FeedList 
             selectedFeed={selectedFeed}
             articles={currentFeedState?.articles || []}
@@ -159,41 +165,47 @@ const App: React.FC = () => {
             onLoadMore={handleLoadMore}
             lastUpdated={currentFeedState?.lastUpdated || 0}
             hasMore={currentFeedState?.hasMore ?? false}
-            isSeniorMode={isSeniorMode}
+            fontSizeLevel={fontSizeLevel}
         />
       </div>
 
-      {/* 3. Article View - Slide Over on Mobile, Static on Desktop */}
+      {/* 3. Article View - Floating Sheet on Mobile, Static Column on Desktop */}
       <div 
         className={`
-            fixed inset-0 z-50 flex
-            transition-transform duration-300 ease-out will-change-transform
-            ${selectedArticle ? 'translate-x-0' : 'translate-x-full'}
-            md:static md:translate-x-0 md:flex-1 md:inset-auto md:w-full
+            fixed inset-0 z-50 flex justify-end
+            md:static md:flex-1 md:inset-auto md:w-full md:block
+            ${selectedArticle ? 'pointer-events-auto' : 'pointer-events-none md:pointer-events-auto'}
         `}
       >
-        {/* Mobile: The "Left Edge" Back Button Area (Blurred Strip) */}
-        <button 
-            className="w-12 h-full bg-black/60 backdrop-blur-md md:hidden flex-shrink-0 cursor-pointer 
-                       flex items-center justify-center group border-r border-white/10 active:bg-black/80 transition-all outline-none"
+        {/* Mobile Backdrop (Click to close) */}
+        <div 
+            className={`
+                absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity duration-300 md:hidden
+                ${selectedArticle ? 'opacity-100' : 'opacity-0'}
+            `}
             onClick={() => setSelectedArticle(null)}
-            aria-label="Back to list"
-        >
-             <div className="bg-white/10 p-2 rounded-full group-active:scale-90 transition-transform shadow-lg border border-white/5">
-                <ChevronLeft className="w-5 h-5 text-gray-200 group-hover:text-white group-hover:-translate-x-0.5 transition-transform" />
-             </div>
-        </button>
+            aria-hidden="true"
+        />
 
         {/* The Article Content Panel */}
-        <div className="flex-1 h-full bg-gray-950 w-full md:w-auto shadow-2xl md:shadow-none border-l border-gray-800 md:border-l-0 overflow-hidden relative">
+        <div 
+            className={`
+                relative h-full w-[95%] bg-gray-950 shadow-2xl overflow-hidden
+                transform transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1) will-change-transform
+                
+                /* Mobile Styles: Slide in from right, leave a strip on left */
+                translate-x-full border-l border-gray-800/50
+                ${selectedArticle ? '!translate-x-0' : ''}
+                
+                /* Desktop Styles Reset: Normal column behavior */
+                md:w-full md:translate-x-0 md:transform-none md:shadow-none md:border-none md:rounded-none
+            `}
+        >
             <ArticleView 
                 article={selectedArticle} 
                 onBack={() => setSelectedArticle(null)}
-                isSeniorMode={isSeniorMode}
+                fontSizeLevel={fontSizeLevel}
             />
-            
-            {/* Mobile Visual Cue: A subtle shadow on the left edge of the content panel */}
-            <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-black/20 to-transparent md:hidden pointer-events-none"></div>
         </div>
       </div>
       
