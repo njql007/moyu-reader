@@ -20,7 +20,8 @@ const firebaseConfig = {
     storageBucket: "gen-lang-client-0972231676.firebasestorage.app",
     messagingSenderId: "292279625258",
     appId: "1:292279625258:web:6db10f03e859fff9a7c553",
-    measurementId: "G-EVV0ZS5R3T"
+    measurementId: "G-EVV0ZS5R3T",
+    databaseURL: "https://gen-lang-client-0972231676-default-rtdb.firebaseio.com"
 };
 
 const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY_HERE";
