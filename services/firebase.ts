@@ -36,6 +36,7 @@ export interface Activity {
     action: string;
     target?: string;
     link?: string; // URL to the article
+    feedId?: string;
     timestamp: number;
 }
 
@@ -71,7 +72,7 @@ export const initPresence = (onCountChange: (count: number) => void) => {
     };
 };
 
-export const broadcastActivity = (action: string, target?: string, link?: string) => {
+export const broadcastActivity = (action: string, target?: string, link?: string, feedId?: string) => {
     if (!db) return;
 
     const activityRef = ref(db, '/activity');
@@ -82,6 +83,7 @@ export const broadcastActivity = (action: string, target?: string, link?: string
         action,
         target: target || '',
         link: link || '',
+        feedId: feedId || '',
         timestamp: serverTimestamp()
     });
 };

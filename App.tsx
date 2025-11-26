@@ -17,6 +17,8 @@ const App: React.FC = () => {
 
   const [feedCache, setFeedCache] = useState<Record<string, FeedState>>({});
 
+  const [pendingArticleLink, setPendingArticleLink] = useState<string | null>(null);
+
   const loadFeed = useCallback(async (feed: RSSFeed, forceRefresh = false, pageToLoad = 1) => {
     const now = Date.now();
     const existing = feedCache[feed.id];
@@ -98,6 +100,20 @@ const App: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Deep Linking Effect: When pendingArticleLink is set and feed is loaded, try to open the article
+  useEffect(() => {
+    if (pendingArticleLink && selectedFeed) {
+      const feedState = feedCache[selectedFeed.id];
+      if (feedState && !feedState.isLoading && feedState.articles.length > 0) {
+        const targetArticle = feedState.articles.find(a => a.link === pendingArticleLink);
+        if (targetArticle) {
+          setSelectedArticle(targetArticle);
+          setPendingArticleLink(null); // Clear pending state
+        }
+      }
+    }
+  }, [pendingArticleLink, selectedFeed, feedCache]);
+
   const handleFeedSelect = (feed: RSSFeed) => {
     setSelectedFeed(feed);
     setSelectedArticle(null);
@@ -123,6 +139,23 @@ const App: React.FC = () => {
       if (!currentState.isLoading && currentState.hasMore) {
         loadFeed(selectedFeed, false, currentState.page + 1);
       }
+    }
+  };
+
+  const handleSocialNavigation = (feedId: string, articleLink: string) => {
+    const targetFeed = FEEDS.find(f => f.id === feedId);
+    if (targetFeed) {
+      setSelectedFeed(targetFeed);
+      setPendingArticleLink(articleLink);
+
+      // If feed not loaded, load it. If loaded, the effect will pick it up.
+      if (!feedCache[feedId]) {
+        loadFeed(targetFeed, false, 1);
+      }
+    } else {
+      console.warn("Feed not found for ID:", feedId);
+      // Fallback: Open in new tab if we can't find the feed
+      window.open(articleLink, '_blank');
     }
   };
 
@@ -226,7 +259,10 @@ const App: React.FC = () => {
 
       {/* Social Bar (Fixed Bottom) */}
       <div className="fixed bottom-0 left-0 right-0 z-50 md:left-14 lg:left-64">
-        <SocialBar />
+        <SocialBar
+          currentArticle={selectedArticle}
+          onNavigate={handleSocialNavigation}
+        />
       </div>
     </div>
   );

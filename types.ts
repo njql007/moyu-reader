@@ -15,6 +15,7 @@ export interface Article {
   content: string; // The full content or description
   contentSnippet?: string;
   categories?: string[];
+  feedId?: string;
 }
 
 export interface FeedState {

@@ -40,7 +40,8 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
 
         if (article) {
             // Broadcast activity with link
-            broadcastActivity('reading', article.title, article.link);
+            // Broadcast activity with link and feedId
+            broadcastActivity('reading', article.title, article.link, article.feedId);
 
             // Decide if we should show the loading screen
             const contentLen = article.content?.length || 0;
