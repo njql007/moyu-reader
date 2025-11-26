@@ -230,7 +230,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
             {/* READER View (HTML / Markdown) */}
             {activeTab === 'READER' && (
                 <div ref={contentRef} className="flex-1 overflow-y-auto bg-gray-950 scroll-smooth custom-scrollbar">
-                    <div className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12">
+                    <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
 
                         {/* Article Header */}
                         <header className={`mb-8 border-b border-gray-800/50 pb-8 ${fontSizeLevel > 0 ? 'space-y-4' : ''}`}>
