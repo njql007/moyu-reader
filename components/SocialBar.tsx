@@ -53,7 +53,7 @@ export const SocialBar: React.FC<SocialBarProps> = ({ currentArticle, onNavigate
                                     latestActivity!.link && latestActivity!.feedId ? (
                                         <button
                                             onClick={() => onNavigate(latestActivity!.feedId!, latestActivity!.link!)}
-                                            className="text-blue-400 hover:text-blue-300 ml-1 flex items-center hover:underline cursor-pointer bg-transparent border-none p-0"
+                                            className="text-blue-400 hover:text-blue-300 ml-1 flex items-center hover:underline cursor-pointer bg-transparent border-none p-0 z-10 pointer-events-auto"
                                         >
                                             "{latestActivity!.target}"
                                             <ArrowRight className="w-2 h-2 ml-1 opacity-70" />
