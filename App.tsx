@@ -6,6 +6,7 @@ import { RSSFeed, Article, FeedState } from './types';
 import { FEEDS } from './constants';
 import { fetchRSSFeed } from './services/rssService';
 import { AlertCircle } from 'lucide-react';
+import { SocialBar } from './components/SocialBar';
 
 const App: React.FC = () => {
   const [selectedFeed, setSelectedFeed] = useState<RSSFeed | null>(FEEDS[0]);
@@ -222,6 +223,11 @@ const App: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Social Bar (Fixed Bottom) */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:left-14 lg:left-64">
+        <SocialBar />
+      </div>
     </div>
   );
 };
