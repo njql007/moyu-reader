@@ -14,14 +14,14 @@ import {
 
 // TODO: Replace with your Firebase project configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyCMMkfkmY5D8YEn2Yi2pwIdwn0H-aXaAx0",
-    authDomain: "gen-lang-client-0972231676.firebaseapp.com",
-    projectId: "gen-lang-client-0972231676",
-    storageBucket: "gen-lang-client-0972231676.firebasestorage.app",
-    messagingSenderId: "292279625258",
-    appId: "1:292279625258:web:6db10f03e859fff9a7c553",
-    measurementId: "G-EVV0ZS5R3T",
-    databaseURL: "https://gen-lang-client-0972231676-default-rtdb.firebaseio.com"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL
 };
 
 const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY_HERE";
