@@ -174,6 +174,7 @@ const App: React.FC = () => {
           onSelectFeed={handleFeedSelect}
           fontSizeLevel={fontSizeLevel}
           onCycleFontSize={cycleFontSize}
+          isCollapsed={!!selectedArticle}
         />
       </div>
 
@@ -258,7 +259,7 @@ const App: React.FC = () => {
       )}
 
       {/* Social Bar (Fixed Bottom) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:left-14 lg:left-64">
+      <div className={`fixed bottom-0 left-0 right-0 z-50 md:left-14 ${selectedArticle ? 'lg:left-14' : 'lg:left-64'} transition-all duration-300 ease-in-out`}>
         <SocialBar
           currentArticle={selectedArticle}
           onNavigate={handleSocialNavigation}
