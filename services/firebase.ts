@@ -14,12 +14,13 @@ import {
 
 // TODO: Replace with your Firebase project configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyADCYZx3AAxeiGVPt-yMQV18iDnaLL2Qg0",
-    authDomain: "coffee-spark-ai-barista-2058a.firebaseapp.com",
-    projectId: "coffee-spark-ai-barista-2058a",
-    storageBucket: "coffee-spark-ai-barista-2058a.firebasestorage.app",
-    messagingSenderId: "246525689046",
-    appId: "1:246525689046:web:c76e575b268070d8091d77"
+    apiKey: "AIzaSyCMMkfkmY5D8YEn2Yi2pwIdwn0H-aXaAx0",
+    authDomain: "gen-lang-client-0972231676.firebaseapp.com",
+    projectId: "gen-lang-client-0972231676",
+    storageBucket: "gen-lang-client-0972231676.firebasestorage.app",
+    messagingSenderId: "292279625258",
+    appId: "1:292279625258:web:6db10f03e859fff9a7c553",
+    measurementId: "G-EVV0ZS5R3T"
 };
 
 const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY_HERE";
