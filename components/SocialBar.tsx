@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { initPresence, subscribeToActivity, Activity } from '../services/firebase';
+import { initPresence, subscribeToActivity, Activity, sessionId } from '../services/firebase';
 import { Users, Activity as ActivityIcon, ExternalLink, ArrowRight } from 'lucide-react';
 import { Article } from '../types';
 
@@ -15,11 +15,13 @@ export const SocialBar: React.FC<SocialBarProps> = ({ currentArticle, onNavigate
     useEffect(() => {
         const cleanupPresence = initPresence(setOnlineCount);
         const cleanupActivity = subscribeToActivity((activities) => {
-            if (activities.length > 0) {
-                // Filter out activities that match what the user is currently reading
-                // We do this check inside the render or effect, but here we just store the latest.
-                // Actually, let's store the latest valid one.
-                setLatestActivity(activities[0]);
+            // Filter out my own activities
+            const othersActivities = activities.filter(a => a.sessionId !== sessionId);
+
+            if (othersActivities.length > 0) {
+                setLatestActivity(othersActivities[0]);
+            } else {
+                setLatestActivity(null);
             }
         });
 

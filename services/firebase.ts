@@ -28,11 +28,12 @@ const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY_HERE";
 const app = isConfigured ? initializeApp(firebaseConfig) : null;
 const db = app ? getDatabase(app) : null;
 
-const sessionId = Math.random().toString(36).substring(2, 15);
+export const sessionId = Math.random().toString(36).substring(2, 15);
 
 export interface Activity {
     id?: string;
     user: string;
+    sessionId?: string; // Add sessionId to track origin
     action: string;
     target?: string;
     link?: string; // URL to the article
@@ -80,6 +81,7 @@ export const broadcastActivity = (action: string, target?: string, link?: string
 
     set(newActivityRef, {
         user: 'Anonymous Reader',
+        sessionId, // Include sessionId
         action,
         target: target || '',
         link: link || '',
