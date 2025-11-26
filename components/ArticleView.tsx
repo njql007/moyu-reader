@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Article } from '../types';
 import { fetchFullArticle, fetchWebPage } from '../services/rssService';
-import { broadcastService } from '../services/broadcastService';
+import { broadcastActivity } from '../services/firebase';
 import { ExternalLink, BookOpen, Globe, MonitorPlay, Loader2, Globe as GlobeIcon, ChevronLeft } from 'lucide-react';
 
 interface ArticleViewProps {
@@ -39,8 +39,8 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
         }
 
         if (article) {
-            // Broadcast activity
-            broadcastService.sendActivity('reading', article.title);
+            // Broadcast activity with link
+            broadcastActivity('reading', article.title, article.link);
 
             // Decide if we should show the loading screen
             const contentLen = article.content?.length || 0;
@@ -268,7 +268,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
                             ) : (
                                 // Standard Reader Mode with Senior Mode support
                                 <div className={`prose prose-invert max-w-none 
-                    prose-img:rounded-xl prose-img:max-w-full prose-img:h-auto prose-video:w-full 
+                    prose-img:rounded-xl prose-img:max-w-full prose-img:h-auto prose-video:w-full
                     prose-headings:text-gray-100 prose-p:text-gray-300 prose-a:text-blue-400
                     ${getProseClass()}`}>
                                     <div dangerouslySetInnerHTML={{ __html: displayContent }} />
