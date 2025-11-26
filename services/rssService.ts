@@ -361,7 +361,8 @@ export const fetchRSSFeed = async (feed: RSSFeed, page: number = 1): Promise<Art
                 guid,
                 author,
                 content: processedContent,
-                contentSnippet
+                contentSnippet,
+                feedId: feed.id
             };
         });
     } catch (error) {
