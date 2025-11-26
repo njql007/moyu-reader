@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Article } from '../types';
 import { fetchFullArticle, fetchWebPage } from '../services/rssService';
 import { broadcastActivity } from '../services/firebase';
-import { ExternalLink, BookOpen, Globe, MonitorPlay, Loader2, Globe as GlobeIcon, ChevronLeft } from 'lucide-react';
+import { ExternalLink, BookOpen, Globe, MonitorPlay, Loader2, Globe as GlobeIcon, ChevronLeft, Maximize2, Minimize2, Link as LinkIcon, Check } from 'lucide-react';
 
 interface ArticleViewProps {
     article: Article | null;
@@ -14,6 +14,8 @@ type TabMode = 'READER' | 'WEB';
 
 export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontSizeLevel }) => {
     const [activeTab, setActiveTab] = useState<TabMode>('READER');
+    const [isFullWidth, setIsFullWidth] = useState(false);
+    const [hasCopied, setHasCopied] = useState(false);
 
     // Content states
     const [fullContent, setFullContent] = useState<string | null>(null);
@@ -33,6 +35,9 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
         setWebPageContent(null);
         setIsLoadingFullContent(false);
         setIsLoadingWeb(false);
+        setHasCopied(false);
+        // Reset full width preference or keep it? Let's keep it as user preference for session.
+        // setIsFullWidth(false); 
 
         if (contentRef.current) {
             contentRef.current.scrollTop = 0;
@@ -78,6 +83,17 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
         const html = await fetchWebPage(article.link);
         setWebPageContent(html);
         setIsLoadingWeb(false);
+    };
+
+    const handleCopyLink = async () => {
+        if (!article) return;
+        try {
+            await navigator.clipboard.writeText(article.link);
+            setHasCopied(true);
+            setTimeout(() => setHasCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy link:', err);
+        }
     };
 
     // Trigger web page load when tab switches
@@ -164,6 +180,25 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
                 <div className="flex items-center space-x-2">
                     {activeTab === 'READER' && (
                         <>
+                            {/* Width Toggle Button */}
+                            <button
+                                onClick={() => setIsFullWidth(!isFullWidth)}
+                                className={`hidden md:flex items-center px-3 py-1.5 rounded-md font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'}`}
+                                title={isFullWidth ? "Switch to Reading Mode" : "Switch to Full Width"}
+                            >
+                                {isFullWidth ? (
+                                    <>
+                                        <Minimize2 className={`${fontSizeLevel > 1 ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2`} />
+                                        Narrow
+                                    </>
+                                ) : (
+                                    <>
+                                        <Maximize2 className={`${fontSizeLevel > 1 ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2`} />
+                                        Expand
+                                    </>
+                                )}
+                            </button>
+
                             {!fullContent && !isLoadingFullContent && !showLoadingScreen && (
                                 <button
                                     onClick={() => handleLoadFullContent(article.link)}
@@ -184,15 +219,17 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
                         </>
                     )}
 
-                    <a
-                        href={article.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <button
+                        onClick={handleCopyLink}
                         className="p-2 text-gray-500 hover:text-blue-400 transition-colors"
-                        title="Open in new tab"
+                        title="Copy article link"
                     >
-                        <ExternalLink className="w-4 h-4" />
-                    </a>
+                        {hasCopied ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                            <LinkIcon className="w-4 h-4" />
+                        )}
+                    </button>
                 </div>
             </div>
 
@@ -230,7 +267,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
             {/* READER View (HTML / Markdown) */}
             {activeTab === 'READER' && (
                 <div ref={contentRef} className="flex-1 overflow-y-auto bg-gray-950 scroll-smooth custom-scrollbar">
-                    <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 md:py-12">
+                    <div className={`${isFullWidth ? 'max-w-none px-8' : 'max-w-3xl'} mx-auto px-4 md:px-6 py-8 md:py-12 transition-all duration-300`}>
 
                         {/* Article Header */}
                         <header className={`mb-8 border-b border-gray-800/50 pb-8 ${fontSizeLevel > 0 ? 'space-y-4' : ''}`}>
