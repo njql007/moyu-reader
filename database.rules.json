@@ -1,0 +1,47 @@
+{
+    "rules": {
+        ".read": false,
+        ".write": false,
+        "status": {
+            ".read": true,
+            "$sessionId": {
+                ".write": true,
+                ".validate": "newData.hasChildren(['state', 'last_changed'])",
+                "state": {
+                    ".validate": "newData.isString()"
+                },
+                "last_changed": {
+                    ".validate": "newData.isNumber()"
+                }
+            }
+        },
+        "activity": {
+            ".read": true,
+            "$activityId": {
+                ".write": true,
+                ".validate": "newData.hasChildren(['user', 'action', 'timestamp'])",
+                "user": {
+                    ".validate": "newData.isString()"
+                },
+                "sessionId": {
+                    ".validate": "newData.isString()"
+                },
+                "action": {
+                    ".validate": "newData.isString()"
+                },
+                "target": {
+                    ".validate": "!newData.exists() || newData.isString()"
+                },
+                "link": {
+                    ".validate": "!newData.exists() || newData.isString()"
+                },
+                "feedId": {
+                    ".validate": "!newData.exists() || newData.isString()"
+                },
+                "timestamp": {
+                    ".validate": "newData.isNumber()"
+                }
+            }
+        }
+    }
+}
