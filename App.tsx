@@ -8,6 +8,9 @@ import { fetchRSSFeed, fetchMixedFeed } from './services/rssService';
 import { AlertCircle } from 'lucide-react';
 import { SocialBar } from './components/SocialBar';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { BossModeProvider } from './contexts/BossModeContext';
+import { BossModeOverlay } from './components/BossModeOverlay';
+import { GamificationProvider } from './contexts/GamificationContext';
 
 const AppContent: React.FC = () => {
   const [selectedFeed, setSelectedFeed] = useState<RSSFeed | null>(MIXED_FEED_CN);
@@ -165,6 +168,8 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen bg-background text-primary overflow-hidden font-sans antialiased selection:bg-accent/30 selection:text-accent relative transition-colors duration-300">
+      <BossModeOverlay />
+
       {/* 1. Sidebar - Always visible in DOM */}
       <div className="flex-shrink-0 h-full hidden md:block z-20">
         <Sidebar
@@ -264,7 +269,11 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ThemeProvider>
-      <AppContent />
+      <BossModeProvider>
+        <GamificationProvider>
+          <AppContent />
+        </GamificationProvider>
+      </BossModeProvider>
     </ThemeProvider>
   );
 };

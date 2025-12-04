@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { FEEDS, MIXED_FEED_CN } from '../constants';
 import { RSSFeed } from '../types';
-import { Coffee, Rss, Type, Palette } from 'lucide-react';
+import { Coffee, Rss, Type, Palette, Trophy, Star } from 'lucide-react';
 import { useTheme, Theme } from '../contexts/ThemeContext';
+import { useGamification } from '../contexts/GamificationContext';
 
 interface SidebarProps {
   selectedFeedId: string | null;
@@ -12,7 +13,9 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ selectedFeedId, onSelectFeed, isCollapsed = false }) => {
   const [hoveredFeed, setHoveredFeed] = useState<{ name: string; top: number; left: number } | null>(null);
+  const [hoveredProfile, setHoveredProfile] = useState<{ top: number; left: number } | null>(null);
   const { theme, setTheme, fontSizeLevel, cycleFontSize } = useTheme();
+  const { userProfile } = useGamification();
 
   const themes: Theme[] = ['dark', 'midnight', 'light', 'sepia'];
   const cycleTheme = () => {
@@ -41,6 +44,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedFeedId, onSelectFeed, 
     }
   };
 
+  // XP Progress Calculation
+  // Threshold for next level = 50 * (Level + 1) * Level
+  // Current Level Base = 50 * Level * (Level - 1)
+  // Progress = (TotalXP - Base) / (Threshold - Base)
+  const currentLevel = userProfile?.level || 1;
+  const nextLevelThreshold = 50 * (currentLevel + 1) * currentLevel;
+  const currentLevelBase = 50 * currentLevel * (currentLevel - 1);
+  const xpNeededForLevel = nextLevelThreshold - currentLevelBase;
+  const xpProgress = userProfile ? userProfile.xp - currentLevelBase : 0;
+  const progressPercent = Math.min(100, Math.max(0, (xpProgress / xpNeededForLevel) * 100));
+
   return (
     <div className={`w-12 md:w-14 ${isCollapsed ? 'lg:w-14' : 'lg:w-64'} h-full bg-surface border-r border-border flex flex-col flex-shrink-0 relative z-40 transition-all duration-300 ease-in-out`}>
       {/* Logo Area */}
@@ -50,6 +64,53 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedFeedId, onSelectFeed, 
         </div>
         <span className={`ml-3 font-bold text-primary hidden ${isCollapsed ? '' : 'lg:block'} tracking-tight ${fontSizeLevel > 0 ? 'text-2xl' : 'text-xl'}`}>Moyu</span>
       </div>
+
+      {/* User Profile Card */}
+      {userProfile && (
+        <div
+          className={`border-b border-border bg-elevated/50 ${isCollapsed ? 'py-2' : 'p-4'} cursor-default`}
+          onMouseEnter={(e) => {
+            if (isCollapsed || window.innerWidth < 1024) {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setHoveredProfile({
+                top: rect.top + (rect.height / 2),
+                left: rect.right
+              });
+            }
+          }}
+          onMouseLeave={() => setHoveredProfile(null)}
+        >
+          <div className={`flex items-center ${isCollapsed ? 'justify-center flex-col gap-1' : 'gap-3'}`}>
+            <div className="relative shrink-0">
+              <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-inner">
+                {userProfile.level}
+              </div>
+              <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-[10px] text-black font-bold px-1 rounded-full border border-surface">
+                LV
+              </div>
+            </div>
+
+            <div className={`flex flex-col overflow-hidden ${isCollapsed ? 'hidden' : 'lg:flex'}`}>
+              <span className="font-bold text-primary truncate text-sm">{userProfile.name}</span>
+              <span className="text-xs text-accent truncate">{userProfile.title}</span>
+            </div>
+          </div>
+
+          {/* XP Bar */}
+          <div className={`mt-3 ${isCollapsed ? 'hidden' : 'lg:block'}`}>
+            <div className="flex justify-between text-[10px] text-muted mb-1">
+              <span>XP</span>
+              <span>{xpProgress} / {xpNeededForLevel}</span>
+            </div>
+            <div className="h-1.5 w-full bg-background rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Feeds List */}
       <div
@@ -166,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedFeedId, onSelectFeed, 
         </button>
       </div>
 
-      {/* Fixed Tooltip Portal - Renders outside the overflow container */}
+      {/* Fixed Tooltip Portal for Feeds */}
       {hoveredFeed && (
         <div
           className={`fixed z-50 bg-elevated text-primary px-2 py-1.5 rounded shadow-xl border border-border ${isCollapsed ? '' : 'lg:hidden'} pointer-events-none whitespace-nowrap animate-in fade-in duration-150 ${fontSizeLevel > 1 ? 'text-base' : 'text-xs'}`}
@@ -177,6 +238,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedFeedId, onSelectFeed, 
           }}
         >
           {hoveredFeed.name}
+          {/* Tiny arrow pointing left */}
+          <div className="absolute top-1/2 -left-1 w-2 h-2 bg-elevated border-l border-b border-border transform -translate-y-1/2 rotate-45"></div>
+        </div>
+      )}
+
+      {/* Fixed Tooltip Portal for Profile */}
+      {hoveredProfile && userProfile && (
+        <div
+          className={`fixed z-50 bg-elevated text-primary p-3 rounded-lg shadow-xl border border-border pointer-events-none min-w-[160px] animate-in fade-in duration-150`}
+          style={{
+            top: hoveredProfile.top,
+            left: hoveredProfile.left + 10,
+            transform: 'translateY(-50%)'
+          }}
+        >
+          <div className="font-bold text-sm mb-1">{userProfile.name}</div>
+          <div className="text-xs text-accent mb-2">{userProfile.title}</div>
+
+          <div className="flex justify-between text-[10px] text-muted mb-1">
+            <span>XP</span>
+            <span>{userProfile.xp - (50 * userProfile.level * (userProfile.level - 1))} / {50 * (userProfile.level + 1) * userProfile.level - 50 * userProfile.level * (userProfile.level - 1)}</span>
+          </div>
+          <div className="h-1.5 w-full bg-background rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+              style={{ width: `${Math.min(100, Math.max(0, ((userProfile.xp - (50 * userProfile.level * (userProfile.level - 1))) / (50 * (userProfile.level + 1) * userProfile.level - 50 * userProfile.level * (userProfile.level - 1))) * 100))}%` }}
+            />
+          </div>
+
           {/* Tiny arrow pointing left */}
           <div className="absolute top-1/2 -left-1 w-2 h-2 bg-elevated border-l border-b border-border transform -translate-y-1/2 rotate-45"></div>
         </div>

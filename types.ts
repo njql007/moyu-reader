@@ -26,3 +26,13 @@ export interface FeedState {
   page: number;
   hasMore: boolean;
 }
+
+export interface UserProfile {
+  userId: string; // sessionId
+  name: string;
+  level: number;
+  xp: number;
+  title: string;
+  lastXpTime?: number; // For throttling
+  xpInLastMinute?: number; // For throttling
+}

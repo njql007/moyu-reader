@@ -17,6 +17,9 @@
         },
         "activity": {
             ".read": true,
+            ".indexOn": [
+                "timestamp"
+            ],
             "$activityId": {
                 ".write": true,
                 ".validate": "newData.hasChildren(['user', 'action', 'timestamp'])",
@@ -41,6 +44,12 @@
                 "timestamp": {
                     ".validate": "newData.isNumber()"
                 }
+            }
+        },
+        "users": {
+            "$sessionId": {
+                ".read": true,
+                ".write": true
             }
         }
     }

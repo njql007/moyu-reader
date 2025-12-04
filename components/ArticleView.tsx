@@ -4,6 +4,7 @@ import { fetchFullArticle, fetchWebPage } from '../services/rssService';
 import { broadcastActivity } from '../services/firebase';
 import { ExternalLink, BookOpen, Globe, MonitorPlay, Loader2, Globe as GlobeIcon, ChevronLeft, Maximize2, Minimize2, Link as LinkIcon, Check } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useGamification } from '../contexts/GamificationContext';
 
 interface ArticleViewProps {
     article: Article | null;
@@ -14,6 +15,7 @@ type TabMode = 'READER' | 'WEB';
 
 export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => {
     const { fontSizeLevel } = useTheme();
+    const { addXP } = useGamification();
     const [activeTab, setActiveTab] = useState<TabMode>('READER');
     const [isFullWidth, setIsFullWidth] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
@@ -48,6 +50,9 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => 
             // Broadcast activity with link
             // Broadcast activity with link and feedId
             broadcastActivity('reading', article.title, article.link, article.feedId);
+
+            // Add XP for reading
+            addXP(10);
 
             // Decide if we should show the loading screen
             const contentLen = article.content?.length || 0;
