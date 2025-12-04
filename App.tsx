@@ -7,16 +7,12 @@ import { FEEDS, MIXED_FEED_CN } from './constants';
 import { fetchRSSFeed, fetchMixedFeed } from './services/rssService';
 import { AlertCircle } from 'lucide-react';
 import { SocialBar } from './components/SocialBar';
+import { ThemeProvider } from './contexts/ThemeContext';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [selectedFeed, setSelectedFeed] = useState<RSSFeed | null>(MIXED_FEED_CN);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-
-  // 0: Default, 1: Large, 2: Extra Large, 3: Huge
-  const [fontSizeLevel, setFontSizeLevel] = useState<number>(0);
-
   const [feedCache, setFeedCache] = useState<Record<string, FeedState>>({});
-
   const [pendingArticleLink, setPendingArticleLink] = useState<string | null>(null);
 
   const loadFeed = useCallback(async (feed: RSSFeed, forceRefresh = false, pageToLoad = 1) => {
@@ -165,21 +161,15 @@ const App: React.FC = () => {
     }
   };
 
-  const cycleFontSize = () => {
-    setFontSizeLevel(prev => (prev + 1) % 4);
-  };
-
   const currentFeedState = selectedFeed ? feedCache[selectedFeed.id] || { articles: [], isLoading: true, error: null, lastUpdated: 0, page: 1, hasMore: true } : null;
 
   return (
-    <div className="flex h-screen w-screen bg-black text-gray-100 overflow-hidden font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200 relative">
+    <div className="flex h-screen w-screen bg-background text-primary overflow-hidden font-sans antialiased selection:bg-accent/30 selection:text-accent relative transition-colors duration-300">
       {/* 1. Sidebar - Always visible in DOM */}
       <div className="flex-shrink-0 h-full hidden md:block z-20">
         <Sidebar
           selectedFeedId={selectedFeed?.id || null}
           onSelectFeed={handleFeedSelect}
-          fontSizeLevel={fontSizeLevel}
-          onCycleFontSize={cycleFontSize}
           isCollapsed={!!selectedArticle}
         />
       </div>
@@ -189,13 +179,11 @@ const App: React.FC = () => {
         <Sidebar
           selectedFeedId={selectedFeed?.id || null}
           onSelectFeed={handleFeedSelect}
-          fontSizeLevel={fontSizeLevel}
-          onCycleFontSize={cycleFontSize}
         />
       </div>
 
       {/* 2. Feed List */}
-      <div className="h-full z-10 flex-1 md:flex-none md:w-96 min-w-0 bg-gray-900">
+      <div className="h-full z-10 flex-1 md:flex-none md:w-96 min-w-0 bg-surface border-r border-border">
         <FeedList
           selectedFeed={selectedFeed}
           articles={currentFeedState?.articles || []}
@@ -206,7 +194,6 @@ const App: React.FC = () => {
           onLoadMore={handleLoadMore}
           lastUpdated={currentFeedState?.lastUpdated || 0}
           hasMore={currentFeedState?.hasMore ?? false}
-          fontSizeLevel={fontSizeLevel}
         />
       </div>
 
@@ -231,11 +218,11 @@ const App: React.FC = () => {
         {/* The Article Content Panel */}
         <div
           className={`
-                relative h-full w-[95%] bg-gray-950 shadow-2xl overflow-hidden
+                relative h-full w-[95%] bg-background shadow-2xl overflow-hidden
                 transform transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1) will-change-transform
                 
                 /* Mobile Styles: Slide in from right, leave a strip on left */
-                translate-x-full border-l border-gray-800/50
+                translate-x-full border-l border-border
                 ${selectedArticle ? '!translate-x-0' : ''}
                 
                 /* Desktop Styles Reset: Normal column behavior */
@@ -245,7 +232,6 @@ const App: React.FC = () => {
           <ArticleView
             article={selectedArticle}
             onBack={() => setSelectedArticle(null)}
-            fontSizeLevel={fontSizeLevel}
           />
         </div>
       </div>
@@ -272,6 +258,14 @@ const App: React.FC = () => {
         />
       </div>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 };
 

@@ -10,19 +10,29 @@
   <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
+            background: 'var(--bg-primary)',
+            surface: 'var(--bg-secondary)',
+            elevated: 'var(--bg-tertiary)',
+            primary: 'var(--text-primary)',
+            secondary: 'var(--text-secondary)',
+            muted: 'var(--text-muted)',
+            border: 'var(--border-color)',
+            accent: 'var(--accent-color)',
+            // Keep existing gray scale for specific needs if any
             gray: {
-              750: '#2d3748', // Custom lighter gray
-              850: '#1a202c', // Custom darker gray
-              900: '#111827', // Standard dark
-              950: '#030712', // Deep dark
+              750: '#2d3748',
+              850: '#1a202c',
+              900: '#111827',
+              950: '#030712',
             }
           },
           fontFamily: {
             sans: ['Inter', 'system-ui', 'sans-serif'],
-            display: ['Calistoga', 'serif'], // Optional for headers if we loaded it
+            display: ['Calistoga', 'serif'],
             mono: ['JetBrains Mono', 'monospace'],
           }
         }
@@ -30,6 +40,74 @@
     }
   </script>
   <style>
+    :root {
+      /* Default Dark Theme */
+      --bg-primary: #000000;
+      --bg-secondary: #111827;
+      /* gray-900 */
+      --bg-tertiary: #1a202c;
+      /* gray-850 */
+      --text-primary: #f3f4f6;
+      /* gray-100 */
+      --text-secondary: #d1d5db;
+      /* gray-300 */
+      --text-muted: #6b7280;
+      /* gray-500 */
+      --border-color: #1f2937;
+      /* gray-800 */
+      --accent-color: #3b82f6;
+      /* blue-500 */
+    }
+
+    .theme-midnight {
+      --bg-primary: #0f172a;
+      /* slate-950 */
+      --bg-secondary: #1e293b;
+      /* slate-800 */
+      --bg-tertiary: #334155;
+      /* slate-700 */
+      --text-primary: #f8fafc;
+      /* slate-50 */
+      --text-secondary: #cbd5e1;
+      /* slate-300 */
+      --text-muted: #64748b;
+      /* slate-500 */
+      --border-color: #334155;
+      /* slate-700 */
+      --accent-color: #60a5fa;
+      /* blue-400 */
+    }
+
+    .theme-light {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f3f4f6;
+      /* gray-100 */
+      --bg-tertiary: #e5e7eb;
+      /* gray-200 */
+      --text-primary: #111827;
+      /* gray-900 */
+      --text-secondary: #374151;
+      /* gray-700 */
+      --text-muted: #6b7280;
+      /* gray-500 */
+      --border-color: #e5e7eb;
+      /* gray-200 */
+      --accent-color: #2563eb;
+      /* blue-600 */
+    }
+
+    .theme-sepia {
+      --bg-primary: #f6f3e8;
+      --bg-secondary: #efede3;
+      --bg-tertiary: #e3e0d1;
+      --text-primary: #433422;
+      --text-secondary: #5c4b37;
+      --text-muted: #8c7b66;
+      --border-color: #dcd6c6;
+      --accent-color: #d97706;
+      /* amber-600 */
+    }
+
     /* Custom scrollbar for stealth mode */
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
@@ -41,17 +119,17 @@
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #374151;
+      background: var(--border-color);
       border-radius: 3px;
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #4b5563;
+      background: var(--text-muted);
     }
 
     /* Article content styling enhancements */
     .prose {
-      color: #d1d5db;
+      color: var(--text-secondary);
       line-height: 1.8;
     }
 
@@ -69,21 +147,21 @@
     }
 
     .prose a {
-      color: #60a5fa;
+      color: var(--accent-color);
       text-decoration-line: underline;
       text-decoration-thickness: 1px;
       text-underline-offset: 4px;
     }
 
     .prose a:hover {
-      color: #93c5fd;
+      opacity: 0.8;
     }
 
     .prose h1,
     .prose h2,
     .prose h3,
     .prose h4 {
-      color: #f3f4f6;
+      color: var(--text-primary);
       font-weight: 700;
       margin-top: 2.5rem;
       margin-bottom: 1rem;
@@ -98,8 +176,8 @@
     }
 
     .prose blockquote {
-      border-left-color: #4b5563;
-      color: #9ca3af;
+      border-left-color: var(--text-muted);
+      color: var(--text-muted);
     }
 
     /* Hide scrollbar for clean look in some containers but keep functionality */
@@ -114,7 +192,7 @@
   </style>
 </head>
 
-<body class="bg-black text-gray-100 overflow-hidden">
+<body class="bg-background text-primary overflow-hidden">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

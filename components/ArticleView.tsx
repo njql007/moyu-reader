@@ -3,16 +3,17 @@ import { Article } from '../types';
 import { fetchFullArticle, fetchWebPage } from '../services/rssService';
 import { broadcastActivity } from '../services/firebase';
 import { ExternalLink, BookOpen, Globe, MonitorPlay, Loader2, Globe as GlobeIcon, ChevronLeft, Maximize2, Minimize2, Link as LinkIcon, Check } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ArticleViewProps {
     article: Article | null;
     onBack?: () => void;
-    fontSizeLevel: number;
 }
 
 type TabMode = 'READER' | 'WEB';
 
-export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontSizeLevel }) => {
+export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack }) => {
+    const { fontSizeLevel } = useTheme();
     const [activeTab, setActiveTab] = useState<TabMode>('READER');
     const [isFullWidth, setIsFullWidth] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
@@ -105,12 +106,12 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
 
     if (!article) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-600 bg-gray-950 h-full p-8 text-center select-none">
-                <div className="bg-gray-900 p-6 rounded-full mb-6 animate-pulse">
-                    <MonitorPlay className="w-12 h-12 text-blue-500/50" />
+            <div className="flex-1 flex flex-col items-center justify-center text-muted bg-background h-full p-8 text-center select-none">
+                <div className="bg-surface p-6 rounded-full mb-6 animate-pulse">
+                    <MonitorPlay className="w-12 h-12 text-accent/50" />
                 </div>
-                <h3 className={`font-medium text-gray-300 mb-2 ${fontSizeLevel > 1 ? 'text-2xl' : 'text-xl'}`}>Ready to Slack Off?</h3>
-                <p className={`max-w-md text-gray-500 ${fontSizeLevel > 1 ? 'text-lg' : ''}`}>Select a tech feed from the left to start your distraction-free reading session.</p>
+                <h3 className={`font-medium text-primary mb-2 ${fontSizeLevel > 1 ? 'text-2xl' : 'text-xl'}`}>Ready to Slack Off?</h3>
+                <p className={`max-w-md text-muted ${fontSizeLevel > 1 ? 'text-lg' : ''}`}>Select a tech feed from the left to start your distraction-free reading session.</p>
             </div>
         );
     }
@@ -143,32 +144,32 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
     };
 
     return (
-        <div className="flex-1 flex flex-col bg-gray-950 h-full overflow-hidden relative">
+        <div className="flex-1 flex flex-col bg-background h-full overflow-hidden relative">
             {/* Toolbar */}
-            <div className="h-14 border-b border-gray-800 bg-gray-900/95 backdrop-blur flex items-center justify-between px-3 md:px-6 sticky top-0 z-30 shrink-0">
+            <div className="h-14 border-b border-border bg-surface/95 backdrop-blur flex items-center justify-between px-3 md:px-6 sticky top-0 z-30 shrink-0">
                 <div className="flex items-center gap-3">
                     {/* Mobile Back Button - Re-styled */}
                     {onBack && (
                         <button
                             onClick={onBack}
-                            className="md:hidden group flex items-center justify-center w-9 h-9 rounded-full bg-gray-800 border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-700 active:scale-95 transition-all shadow-sm"
+                            className="md:hidden group flex items-center justify-center w-9 h-9 rounded-full bg-elevated border border-border text-secondary hover:text-primary hover:bg-surface active:scale-95 transition-all shadow-sm"
                             title="Back to list"
                         >
                             <ChevronLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
                         </button>
                     )}
 
-                    <div className="flex bg-gray-950 rounded-lg p-1 border border-gray-800">
+                    <div className="flex bg-background rounded-lg p-1 border border-border">
                         <button
                             onClick={() => setActiveTab('READER')}
-                            className={`flex items-center px-3 py-1.5 rounded-md font-medium transition-all ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'} ${activeTab === 'READER' ? 'bg-gray-800 text-white shadow-sm ring-1 ring-gray-700' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`flex items-center px-3 py-1.5 rounded-md font-medium transition-all ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'} ${activeTab === 'READER' ? 'bg-elevated text-primary shadow-sm ring-1 ring-border' : 'text-muted hover:text-secondary'}`}
                         >
                             <BookOpen className={`${fontSizeLevel > 1 ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2`} />
                             Reader
                         </button>
                         <button
                             onClick={() => setActiveTab('WEB')}
-                            className={`flex items-center px-3 py-1.5 rounded-md font-medium transition-all ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'} ${activeTab === 'WEB' ? 'bg-blue-900/30 text-blue-200 shadow-sm ring-1 ring-blue-500/50' : 'text-gray-500 hover:text-blue-400'}`}
+                            className={`flex items-center px-3 py-1.5 rounded-md font-medium transition-all ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'} ${activeTab === 'WEB' ? 'bg-accent/30 text-accent shadow-sm ring-1 ring-accent/50' : 'text-muted hover:text-accent'}`}
                             title="View original webpage"
                         >
                             <Globe className={`${fontSizeLevel > 1 ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2`} />
@@ -183,7 +184,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
                             {/* Width Toggle Button */}
                             <button
                                 onClick={() => setIsFullWidth(!isFullWidth)}
-                                className={`hidden md:flex items-center px-3 py-1.5 rounded-md font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'}`}
+                                className={`hidden md:flex items-center px-3 py-1.5 rounded-md font-medium text-secondary hover:text-primary hover:bg-elevated transition-colors ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'}`}
                                 title={isFullWidth ? "Switch to Reading Mode" : "Switch to Full Width"}
                             >
                                 {isFullWidth ? (
@@ -202,7 +203,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
                             {!fullContent && !isLoadingFullContent && !showLoadingScreen && (
                                 <button
                                     onClick={() => handleLoadFullContent(article.link)}
-                                    className={`flex items-center px-3 py-1.5 rounded-md font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'}`}
+                                    className={`flex items-center px-3 py-1.5 rounded-md font-medium text-secondary hover:text-primary hover:bg-elevated transition-colors ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'}`}
                                     title="Force fetch full content from source"
                                 >
                                     <GlobeIcon className={`${fontSizeLevel > 1 ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2`} />
@@ -211,7 +212,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
                             )}
 
                             {isLoadingFullContent && !showLoadingScreen && (
-                                <span className={`flex items-center px-3 py-1.5 font-medium text-blue-400 animate-pulse ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'}`}>
+                                <span className={`flex items-center px-3 py-1.5 font-medium text-accent animate-pulse ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'}`}>
                                     <Loader2 className={`${fontSizeLevel > 1 ? 'w-4 h-4' : 'w-3.5 h-3.5'} mr-2 animate-spin`} />
                                     Fetching...
                                 </span>
@@ -221,7 +222,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
 
                     <button
                         onClick={handleCopyLink}
-                        className="p-2 text-gray-500 hover:text-blue-400 transition-colors"
+                        className="p-2 text-muted hover:text-accent transition-colors"
                         title="Copy article link"
                     >
                         {hasCopied ? (
@@ -266,16 +267,16 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
 
             {/* READER View (HTML / Markdown) */}
             {activeTab === 'READER' && (
-                <div ref={contentRef} className="flex-1 overflow-y-auto bg-gray-950 scroll-smooth custom-scrollbar">
+                <div ref={contentRef} className="flex-1 overflow-y-auto bg-background scroll-smooth custom-scrollbar">
                     <div className={`${isFullWidth ? 'max-w-none px-8' : 'max-w-3xl'} mx-auto px-4 md:px-6 py-8 md:py-12 transition-all duration-300`}>
 
                         {/* Article Header */}
-                        <header className={`mb-8 border-b border-gray-800/50 pb-8 ${fontSizeLevel > 0 ? 'space-y-4' : ''}`}>
-                            <h1 className={`${getH1Class()} font-bold text-gray-100 mb-4 font-display`}>
+                        <header className={`mb-8 border-b border-border pb-8 ${fontSizeLevel > 0 ? 'space-y-4' : ''}`}>
+                            <h1 className={`${getH1Class()} font-bold text-primary mb-4 font-display`}>
                                 {article.title}
                             </h1>
-                            <div className={`flex flex-wrap items-center gap-4 ${getMetaClass()} text-gray-500 font-mono`}>
-                                <span className="flex items-center text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">
+                            <div className={`flex flex-wrap items-center gap-4 ${getMetaClass()} text-muted font-mono`}>
+                                <span className="flex items-center text-accent bg-accent/10 px-2 py-0.5 rounded">
                                     {article.author || 'Unknown'}
                                 </span>
                                 <span>{new Date(article.pubDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
@@ -293,33 +294,33 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
                                 // Initial Full Loading Screen
                                 <div className="flex flex-col items-center justify-center py-32 space-y-6">
                                     <div className="relative">
-                                        <div className="w-12 h-12 rounded-full border-4 border-gray-800 border-t-blue-500 animate-spin"></div>
+                                        <div className="w-12 h-12 rounded-full border-4 border-border border-t-accent animate-spin"></div>
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                            <div className="w-2 h-2 bg-accent rounded-full"></div>
                                         </div>
                                     </div>
                                     <div className="text-center space-y-2">
-                                        <p className={`text-gray-300 font-medium ${fontSizeLevel > 1 ? 'text-xl' : ''}`}>Fetching full article...</p>
-                                        <p className="text-gray-600 text-xs">Parsing content from {new URL(article.link).hostname}</p>
+                                        <p className={`text-secondary font-medium ${fontSizeLevel > 1 ? 'text-xl' : ''}`}>Fetching full article...</p>
+                                        <p className="text-muted text-xs">Parsing content from {new URL(article.link).hostname}</p>
                                     </div>
                                 </div>
                             ) : (
                                 // Standard Reader Mode with Senior Mode support
-                                <div className={`prose prose-invert max-w-none 
+                                <div className={`prose max-w-none 
                     prose-img:rounded-xl prose-img:max-w-full prose-img:h-auto prose-video:w-full
-                    prose-headings:text-gray-100 prose-p:text-gray-300 prose-a:text-blue-400
+                    prose-headings:text-primary prose-p:text-secondary prose-a:text-accent
                     ${getProseClass()}`}>
                                     <div dangerouslySetInnerHTML={{ __html: displayContent }} />
 
                                     {/* Fallback if content is missing or very short and not yet fetched */}
                                     {!displayContent && !isLoadingFullContent && (
-                                        <div className="p-8 border border-gray-800 bg-gray-900/30 rounded-xl text-center my-8">
-                                            <p className="text-gray-400 mb-4">
+                                        <div className="p-8 border border-border bg-surface/30 rounded-xl text-center my-8">
+                                            <p className="text-secondary mb-4">
                                                 Full content not available in RSS feed.
                                             </p>
                                             <button
                                                 onClick={() => handleLoadFullContent(article.link)}
-                                                className={`inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium ${fontSizeLevel > 1 ? 'text-lg' : 'text-sm'}`}
+                                                className={`inline-flex items-center px-5 py-2.5 bg-accent hover:bg-accent/80 text-white rounded-lg transition-colors font-medium ${fontSizeLevel > 1 ? 'text-lg' : 'text-sm'}`}
                                             >
                                                 <GlobeIcon className="w-4 h-4 mr-2" /> Load Full Content
                                             </button>
@@ -327,11 +328,11 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onBack, fontS
                                     )}
 
                                     {isContentVeryShort && !isLoadingFullContent && !fullContent && (
-                                        <div className="mt-8 pt-8 border-t border-gray-800 text-center">
-                                            <p className={`text-gray-500 mb-3 ${fontSizeLevel > 1 ? 'text-base' : 'text-sm'}`}>This article seems short. It might be a summary.</p>
+                                        <div className="mt-8 pt-8 border-t border-border text-center">
+                                            <p className={`text-muted mb-3 ${fontSizeLevel > 1 ? 'text-base' : 'text-sm'}`}>This article seems short. It might be a summary.</p>
                                             <button
                                                 onClick={() => handleLoadFullContent(article.link)}
-                                                className={`inline-flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg transition-colors font-medium border border-gray-700 ${fontSizeLevel > 1 ? 'text-base' : 'text-xs'}`}
+                                                className={`inline-flex items-center px-4 py-2 bg-elevated hover:bg-surface text-primary rounded-lg transition-colors font-medium border border-border ${fontSizeLevel > 1 ? 'text-base' : 'text-xs'}`}
                                             >
                                                 <GlobeIcon className={`${fontSizeLevel > 1 ? 'w-4 h-4' : 'w-3 h-3'} mr-2`} /> Try Loading Full Content
                                             </button>

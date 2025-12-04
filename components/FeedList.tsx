@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Article, RSSFeed } from '../types';
 import { FEEDS, MIXED_FEED_CN } from '../constants';
 import { Loader2, RefreshCw } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface FeedListProps {
   selectedFeed: RSSFeed | null;
@@ -13,7 +14,6 @@ interface FeedListProps {
   onLoadMore: () => void;
   lastUpdated: number;
   hasMore: boolean;
-  fontSizeLevel: number;
 }
 
 export const FeedList: React.FC<FeedListProps> = ({
@@ -25,10 +25,10 @@ export const FeedList: React.FC<FeedListProps> = ({
   onRefresh,
   onLoadMore,
   lastUpdated,
-  hasMore,
-  fontSizeLevel
+  hasMore
 }) => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { fontSizeLevel } = useTheme();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -72,7 +72,7 @@ export const FeedList: React.FC<FeedListProps> = ({
     if (fontSizeLevel >= 3) return 'text-2xl leading-tight font-bold';
     if (fontSizeLevel === 2) return 'text-xl leading-snug font-semibold';
     if (fontSizeLevel === 1) return 'text-lg leading-snug font-medium';
-    return 'text-base font-medium'; // Default (text-gray-200)
+    return 'text-base font-medium'; // Default
   };
 
   const getMetaClass = () => {
@@ -91,26 +91,26 @@ export const FeedList: React.FC<FeedListProps> = ({
 
   if (!selectedFeed) {
     return (
-      <div className={`flex-1 flex items-center justify-center text-gray-500 bg-gray-900 h-full ${fontSizeLevel > 1 ? 'text-xl' : ''}`}>
+      <div className={`flex-1 flex items-center justify-center text-muted bg-surface h-full ${fontSizeLevel > 1 ? 'text-xl' : ''}`}>
         Select a feed to start
       </div>
     );
   }
 
   return (
-    <div className={`flex flex-col h-full w-full bg-gray-900 transition-all`}>
+    <div className={`flex flex-col h-full w-full bg-surface transition-all`}>
       {/* Header */}
-      <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-gray-850 sticky top-0 z-10 shrink-0">
-        <h2 className={`font-semibold text-gray-200 truncate pr-2 ${getHeaderSize()}`}>{selectedFeed.name}</h2>
+      <div className="h-14 border-b border-border flex items-center justify-between px-4 bg-surface sticky top-0 z-10 shrink-0">
+        <h2 className={`font-semibold text-primary truncate pr-2 ${getHeaderSize()}`}>{selectedFeed.name}</h2>
         <button
           onClick={onRefresh}
-          className="p-2 hover:bg-gray-700 rounded-full transition-colors shrink-0"
+          className="p-2 hover:bg-elevated rounded-full transition-colors shrink-0"
           title="Refresh Feed"
         >
           {isLoading && articles.length === 0 ? (
-            <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
+            <Loader2 className="w-4 h-4 animate-spin text-accent" />
           ) : (
-            <RefreshCw className="w-4 h-4 text-gray-400" />
+            <RefreshCw className="w-4 h-4 text-muted" />
           )}
         </button>
       </div>
@@ -121,8 +121,8 @@ export const FeedList: React.FC<FeedListProps> = ({
           <div className="p-4 space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="animate-pulse space-y-2">
-                <div className="h-4 bg-gray-800 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-800 rounded w-1/2"></div>
+                <div className="h-4 bg-elevated rounded w-3/4"></div>
+                <div className="h-3 bg-elevated rounded w-1/2"></div>
               </div>
             ))}
           </div>
@@ -137,11 +137,11 @@ export const FeedList: React.FC<FeedListProps> = ({
                 <li key={article.guid}>
                   <button
                     onClick={() => onSelectArticle(article)}
-                    className={`w-full text-left border-b border-gray-800 transition-colors hover:bg-gray-800 focus:outline-none ${getItemPadding()} ${isSelected ? 'bg-gray-800 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
+                    className={`w-full text-left border-b border-border transition-colors hover:bg-elevated focus:outline-none ${getItemPadding()} ${isSelected ? 'bg-elevated border-l-4 border-l-accent' : 'border-l-4 border-l-transparent'
                       }`}
                   >
-                    <h3 className={`${getTitleClass()} mb-1 ${isSelected && fontSizeLevel === 0 ? 'text-blue-400' : 'text-gray-200'
-                      } ${fontSizeLevel > 0 ? 'text-gray-100' : ''} line-clamp-3`}>
+                    <h3 className={`${getTitleClass()} mb-1 ${isSelected && fontSizeLevel === 0 ? 'text-accent' : 'text-primary'
+                      } ${fontSizeLevel > 0 ? 'text-primary' : ''} line-clamp-3`}>
                       {selectedFeed?.id === MIXED_FEED_CN.id && article.feedId && (
                         <span className="inline-block mr-2 text-sm align-middle opacity-70" title={FEEDS.find(f => f.id === article.feedId)?.name}>
                           {FEEDS.find(f => f.id === article.feedId)?.icon || '📰'}
@@ -149,8 +149,8 @@ export const FeedList: React.FC<FeedListProps> = ({
                       )}
                       {article.title}
                     </h3>
-                    <p className={`${getMetaClass()} text-gray-500`}>{timeString}</p>
-                    <p className={`${getSnippetClass()} text-gray-400 line-clamp-2`}>
+                    <p className={`${getMetaClass()} text-muted`}>{timeString}</p>
+                    <p className={`${getSnippetClass()} text-secondary line-clamp-2`}>
                       {article.contentSnippet}
                     </p>
                   </button>
@@ -161,14 +161,14 @@ export const FeedList: React.FC<FeedListProps> = ({
         )}
 
         {!isLoading && articles.length === 0 && (
-          <div className={`p-8 text-center text-gray-500 ${fontSizeLevel > 1 ? 'text-lg' : ''}`}>
+          <div className={`p-8 text-center text-muted ${fontSizeLevel > 1 ? 'text-lg' : ''}`}>
             No articles found.
           </div>
         )}
 
         {/* Infinite Scroll Loader */}
         {articles.length > 0 && hasMore && (
-          <div ref={loadMoreRef} className="p-4 flex justify-center items-center text-gray-500 text-xs">
+          <div ref={loadMoreRef} className="p-4 flex justify-center items-center text-muted text-xs">
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -181,7 +181,7 @@ export const FeedList: React.FC<FeedListProps> = ({
         )}
 
         {articles.length > 0 && !hasMore && (
-          <div className="p-6 text-center text-gray-600 text-xs border-t border-gray-800/50">
+          <div className="p-6 text-center text-muted text-xs border-t border-border">
             End of content
           </div>
         )}
@@ -190,7 +190,7 @@ export const FeedList: React.FC<FeedListProps> = ({
       </div>
 
       {/* Footer status */}
-      <div className="h-8 border-t border-gray-800 bg-gray-900 flex items-center px-4 text-[10px] text-gray-600 justify-between shrink-0">
+      <div className="h-8 border-t border-border bg-surface flex items-center px-4 text-[10px] text-muted justify-between shrink-0">
         <span>Updated: {lastUpdated > 0 ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}</span>
         <span>{articles.length} items</span>
       </div>
