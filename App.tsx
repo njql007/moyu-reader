@@ -3,13 +3,13 @@ import { Sidebar } from './components/Sidebar';
 import { FeedList } from './components/FeedList';
 import { ArticleView } from './components/ArticleView';
 import { RSSFeed, Article, FeedState } from './types';
-import { FEEDS } from './constants';
-import { fetchRSSFeed } from './services/rssService';
+import { FEEDS, MIXED_FEED_CN } from './constants';
+import { fetchRSSFeed, fetchMixedFeed } from './services/rssService';
 import { AlertCircle } from 'lucide-react';
 import { SocialBar } from './components/SocialBar';
 
 const App: React.FC = () => {
-  const [selectedFeed, setSelectedFeed] = useState<RSSFeed | null>(FEEDS[0]);
+  const [selectedFeed, setSelectedFeed] = useState<RSSFeed | null>(MIXED_FEED_CN);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
   // 0: Default, 1: Large, 2: Extra Large, 3: Huge
@@ -41,7 +41,13 @@ const App: React.FC = () => {
     }));
 
     try {
-      const fetchedArticles = await fetchRSSFeed(feed, pageToLoad);
+      let fetchedArticles: Article[] = [];
+      if (feed.id === MIXED_FEED_CN.id) {
+        // Only fetch first 5 feeds (Chinese sources)
+        fetchedArticles = await fetchMixedFeed(FEEDS.slice(0, 5), pageToLoad);
+      } else {
+        fetchedArticles = await fetchRSSFeed(feed, pageToLoad);
+      }
 
       setFeedCache(prev => {
         const current = prev[feed.id];
@@ -259,7 +265,7 @@ const App: React.FC = () => {
       )}
 
       {/* Social Bar (Fixed Bottom) */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 md:left-14 ${selectedArticle ? 'lg:left-14' : 'lg:left-64'} transition-all duration-300 ease-in-out`}>
+      <div className={`fixed bottom-0 left-12 right-0 z-50 md:left-14 ${selectedArticle ? 'lg:left-14' : 'lg:left-64'} transition-all duration-300 ease-in-out`}>
         <SocialBar
           currentArticle={selectedArticle}
           onNavigate={handleSocialNavigation}

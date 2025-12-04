@@ -301,7 +301,7 @@ export const fetchRSSFeed = async (feed: RSSFeed, page: number = 1): Promise<Art
             // Fallback for Page > 1 if RSS fails
             if (page > 1) {
                 try {
-                    return await fetchHtmlList(targetUrl, 'h2 a, h3 a, .entry-title a');
+                    return await fetchHtmlList(targetUrl, 'h2 a, h3 a, .entry-title a', feed.id);
                 } catch (e) {
                     return [];
                 }
@@ -464,4 +464,59 @@ export const fetchFullArticle = async (url: string): Promise<string | null> => {
         console.error("Failed to fetch full article", e);
         return null;
     }
+};
+
+// --- Mixed Feed Logic ---
+export const fetchMixedFeed = async (feeds: RSSFeed[], page: number = 1): Promise<Article[]> => {
+    // We want to fetch from ALL feeds in parallel
+    // To avoid overwhelming the browser/network, we might want to limit concurrency, 
+    // but for < 10 feeds, Promise.all is fine.
+
+    // We fetch the SAME page number from all feeds. 
+    // This is a simple strategy. A more complex one would track offsets per feed.
+    const promises = feeds.map(feed =>
+        fetchRSSFeed(feed, page)
+            .then(articles => ({ feedId: feed.id, articles }))
+            .catch(e => {
+                console.warn(`Failed to fetch ${feed.name} for mixed feed`, e);
+                return { feedId: feed.id, articles: [] as Article[] };
+            })
+    );
+
+    const results = await Promise.all(promises);
+
+    // Group by feed for round-robin picking
+    const articlesByFeed: Record<string, Article[]> = {};
+    let totalArticles = 0;
+
+    results.forEach(r => {
+        articlesByFeed[r.feedId] = r.articles;
+        totalArticles += r.articles.length;
+    });
+
+    const mixedArticles: Article[] = [];
+    const feedIds = feeds.map(f => f.id);
+    let activeFeedIds = [...feedIds];
+
+    // Round-robin shuffling
+    // While we have feeds with articles, keep picking one from each
+    while (activeFeedIds.length > 0) {
+        const nextActiveFeedIds: string[] = [];
+
+        for (const feedId of activeFeedIds) {
+            const articles = articlesByFeed[feedId];
+            if (articles && articles.length > 0) {
+                // Shift the first article from this feed
+                mixedArticles.push(articles.shift()!);
+
+                // If this feed still has articles, keep it in the loop
+                if (articles.length > 0) {
+                    nextActiveFeedIds.push(feedId);
+                }
+            }
+        }
+        activeFeedIds = nextActiveFeedIds;
+    }
+
+    return mixedArticles;
 };

@@ -62,3 +62,11 @@ export const FEEDS: RSSFeed[] = [
     icon: 'V'
   }
 ];
+
+export const MIXED_FEED_CN: RSSFeed = {
+  id: 'mixed_cn',
+  name: 'Mixed Feed (CN)',
+  url: 'mixed://cn', // Virtual URL
+  category: 'news',
+  icon: '🔀'
+};

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FEEDS } from '../constants';
+import { FEEDS, MIXED_FEED_CN } from '../constants';
 import { RSSFeed } from '../types';
 import { Coffee, Rss, Type } from 'lucide-react';
 
@@ -42,6 +42,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ selectedFeedId, onSelectFeed, 
         <div className={`px-4 mb-2 hidden ${isCollapsed ? '' : 'lg:block'} font-semibold text-gray-500 uppercase tracking-wider ${fontSizeLevel > 1 ? 'text-sm' : 'text-xs'}`}>
           Tech Feeds
         </div>
+
+        {/* Mixed Feed Option */}
+        <button
+          onClick={() => onSelectFeed(MIXED_FEED_CN)}
+          onMouseEnter={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setHoveredFeed({
+              name: MIXED_FEED_CN.name,
+              top: rect.top + (rect.height / 2),
+              left: rect.right
+            });
+          }}
+          onMouseLeave={() => setHoveredFeed(null)}
+          className={`w-full flex items-center justify-center ${isCollapsed ? '' : 'lg:justify-start px-0 lg:px-4'} py-2 transition-all duration-200 relative group mb-2
+            ${selectedFeedId === MIXED_FEED_CN.id
+              ? `bg-gray-800/50 text-blue-400 border-r-2 border-blue-500 ${isCollapsed ? '' : 'lg:border-r-0'}`
+              : 'text-gray-400 hover:bg-gray-900 hover:text-gray-200'
+            }`}
+          aria-label={MIXED_FEED_CN.name}
+        >
+          <span className="text-lg lg:text-xl w-6 text-center flex justify-center">{MIXED_FEED_CN.icon}</span>
+          <span className={`ml-3 font-medium hidden ${isCollapsed ? '' : 'lg:block'} truncate ${fontSizeLevel > 0 ? 'text-lg' : 'text-sm'}`}>{MIXED_FEED_CN.name}</span>
+
+          {selectedFeedId === MIXED_FEED_CN.id && !isCollapsed && (
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 hidden lg:block rounded-r-full"></div>
+          )}
+        </button>
+
+        <div className="h-px bg-gray-800 mx-4 my-2"></div>
 
         {FEEDS.map((feed) => (
           <button

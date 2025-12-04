@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Article, RSSFeed } from '../types';
+import { FEEDS, MIXED_FEED_CN } from '../constants';
 import { Loader2, RefreshCw } from 'lucide-react';
 
 interface FeedListProps {
@@ -15,11 +16,11 @@ interface FeedListProps {
   fontSizeLevel: number;
 }
 
-export const FeedList: React.FC<FeedListProps> = ({ 
-  selectedFeed, 
-  articles, 
-  isLoading, 
-  onSelectArticle, 
+export const FeedList: React.FC<FeedListProps> = ({
+  selectedFeed,
+  articles,
+  isLoading,
+  onSelectArticle,
   selectedArticleId,
   onRefresh,
   onLoadMore,
@@ -54,38 +55,38 @@ export const FeedList: React.FC<FeedListProps> = ({
 
   // Dynamic style generators based on font level
   const getHeaderSize = () => {
-      if (fontSizeLevel === 3) return 'text-xl';
-      if (fontSizeLevel === 2) return 'text-lg';
-      if (fontSizeLevel === 1) return 'text-base';
-      return 'text-sm';
+    if (fontSizeLevel === 3) return 'text-xl';
+    if (fontSizeLevel === 2) return 'text-lg';
+    if (fontSizeLevel === 1) return 'text-base';
+    return 'text-sm';
   };
 
   const getItemPadding = () => {
-      if (fontSizeLevel >= 3) return 'p-8';
-      if (fontSizeLevel === 2) return 'p-6';
-      if (fontSizeLevel === 1) return 'p-5';
-      return 'p-4';
+    if (fontSizeLevel >= 3) return 'p-8';
+    if (fontSizeLevel === 2) return 'p-6';
+    if (fontSizeLevel === 1) return 'p-5';
+    return 'p-4';
   };
 
   const getTitleClass = () => {
-      if (fontSizeLevel >= 3) return 'text-2xl leading-tight font-bold';
-      if (fontSizeLevel === 2) return 'text-xl leading-snug font-semibold';
-      if (fontSizeLevel === 1) return 'text-lg leading-snug font-medium';
-      return 'text-base font-medium'; // Default (text-gray-200)
+    if (fontSizeLevel >= 3) return 'text-2xl leading-tight font-bold';
+    if (fontSizeLevel === 2) return 'text-xl leading-snug font-semibold';
+    if (fontSizeLevel === 1) return 'text-lg leading-snug font-medium';
+    return 'text-base font-medium'; // Default (text-gray-200)
   };
 
   const getMetaClass = () => {
-      if (fontSizeLevel >= 3) return 'text-lg mb-4';
-      if (fontSizeLevel === 2) return 'text-base mb-3';
-      if (fontSizeLevel === 1) return 'text-sm mb-2';
-      return 'text-xs mb-2'; // Default
+    if (fontSizeLevel >= 3) return 'text-lg mb-4';
+    if (fontSizeLevel === 2) return 'text-base mb-3';
+    if (fontSizeLevel === 1) return 'text-sm mb-2';
+    return 'text-xs mb-2'; // Default
   };
 
   const getSnippetClass = () => {
-      if (fontSizeLevel >= 3) return 'text-xl leading-relaxed';
-      if (fontSizeLevel === 2) return 'text-lg leading-relaxed';
-      if (fontSizeLevel === 1) return 'text-base';
-      return 'text-xs'; // Default
+    if (fontSizeLevel >= 3) return 'text-xl leading-relaxed';
+    if (fontSizeLevel === 2) return 'text-lg leading-relaxed';
+    if (fontSizeLevel === 1) return 'text-base';
+    return 'text-xs'; // Default
   };
 
   if (!selectedFeed) {
@@ -101,8 +102,8 @@ export const FeedList: React.FC<FeedListProps> = ({
       {/* Header */}
       <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-gray-850 sticky top-0 z-10 shrink-0">
         <h2 className={`font-semibold text-gray-200 truncate pr-2 ${getHeaderSize()}`}>{selectedFeed.name}</h2>
-        <button 
-          onClick={onRefresh} 
+        <button
+          onClick={onRefresh}
           className="p-2 hover:bg-gray-700 rounded-full transition-colors shrink-0"
           title="Refresh Feed"
         >
@@ -126,36 +127,39 @@ export const FeedList: React.FC<FeedListProps> = ({
             ))}
           </div>
         ) : (
-          <ul className="pb-4">
+          <ul className="pb-12">
             {articles.map((article) => {
-                const isSelected = selectedArticleId === article.guid;
-                const date = new Date(article.pubDate);
-                const timeString = isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+              const isSelected = selectedArticleId === article.guid;
+              const date = new Date(article.pubDate);
+              const timeString = isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-                return (
-                  <li key={article.guid}>
-                    <button
-                      onClick={() => onSelectArticle(article)}
-                      className={`w-full text-left border-b border-gray-800 transition-colors hover:bg-gray-800 focus:outline-none ${getItemPadding()} ${
-                        isSelected ? 'bg-gray-800 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
+              return (
+                <li key={article.guid}>
+                  <button
+                    onClick={() => onSelectArticle(article)}
+                    className={`w-full text-left border-b border-gray-800 transition-colors hover:bg-gray-800 focus:outline-none ${getItemPadding()} ${isSelected ? 'bg-gray-800 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'
                       }`}
-                    >
-                      <h3 className={`${getTitleClass()} mb-1 ${
-                          isSelected && fontSizeLevel === 0 ? 'text-blue-400' : 'text-gray-200'
-                          } ${fontSizeLevel > 0 ? 'text-gray-100' : ''} line-clamp-3`}>
-                        {article.title}
-                      </h3>
-                      <p className={`${getMetaClass()} text-gray-500`}>{timeString}</p>
-                      <p className={`${getSnippetClass()} text-gray-400 line-clamp-2`}>
-                        {article.contentSnippet}
-                      </p>
-                    </button>
-                  </li>
-                );
+                  >
+                    <h3 className={`${getTitleClass()} mb-1 ${isSelected && fontSizeLevel === 0 ? 'text-blue-400' : 'text-gray-200'
+                      } ${fontSizeLevel > 0 ? 'text-gray-100' : ''} line-clamp-3`}>
+                      {selectedFeed?.id === MIXED_FEED_CN.id && article.feedId && (
+                        <span className="inline-block mr-2 text-sm align-middle opacity-70" title={FEEDS.find(f => f.id === article.feedId)?.name}>
+                          {FEEDS.find(f => f.id === article.feedId)?.icon || '📰'}
+                        </span>
+                      )}
+                      {article.title}
+                    </h3>
+                    <p className={`${getMetaClass()} text-gray-500`}>{timeString}</p>
+                    <p className={`${getSnippetClass()} text-gray-400 line-clamp-2`}>
+                      {article.contentSnippet}
+                    </p>
+                  </button>
+                </li>
+              );
             })}
           </ul>
         )}
-        
+
         {!isLoading && articles.length === 0 && (
           <div className={`p-8 text-center text-gray-500 ${fontSizeLevel > 1 ? 'text-lg' : ''}`}>
             No articles found.
@@ -164,30 +168,32 @@ export const FeedList: React.FC<FeedListProps> = ({
 
         {/* Infinite Scroll Loader */}
         {articles.length > 0 && hasMore && (
-           <div ref={loadMoreRef} className="p-4 flex justify-center items-center text-gray-500 text-xs">
-              {isLoading ? (
-                  <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Loading more...
-                  </>
-              ) : (
-                  <span className="opacity-0">Load More trigger</span>
-              )}
-           </div>
+          <div ref={loadMoreRef} className="p-4 flex justify-center items-center text-gray-500 text-xs">
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Loading more...
+              </>
+            ) : (
+              <span className="opacity-0">Load More trigger</span>
+            )}
+          </div>
         )}
-        
+
         {articles.length > 0 && !hasMore && (
-            <div className="p-6 text-center text-gray-600 text-xs border-t border-gray-800/50">
-                End of content
-            </div>
+          <div className="p-6 text-center text-gray-600 text-xs border-t border-gray-800/50">
+            End of content
+          </div>
         )}
+        {/* Spacer for SocialBar */}
+        <div className="h-12 shrink-0" />
       </div>
-      
-       {/* Footer status */}
-       <div className="h-8 border-t border-gray-800 bg-gray-900 flex items-center px-4 text-[10px] text-gray-600 justify-between shrink-0">
-         <span>Updated: {lastUpdated > 0 ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}</span>
-         <span>{articles.length} items</span>
-       </div>
+
+      {/* Footer status */}
+      <div className="h-8 border-t border-gray-800 bg-gray-900 flex items-center px-4 text-[10px] text-gray-600 justify-between shrink-0">
+        <span>Updated: {lastUpdated > 0 ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}</span>
+        <span>{articles.length} items</span>
+      </div>
     </div>
   );
 };
